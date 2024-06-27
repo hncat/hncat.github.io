@@ -15,7 +15,13 @@ export default sidebar({
       icon: "book",
       prefix: "cs/",
       link: "cs/",
-      children: "structure",
+      children: [{
+        text: "链接、装载和库",
+        icon: "book",
+        prefix: "linker/",
+        link: "linker/",
+        children: "structure"
+      }],
     },
     "intro",
   ],
