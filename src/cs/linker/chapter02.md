@@ -451,7 +451,7 @@ typedef struct
 > [!tip]
 > 每个符号都有一个对应的值，如果这个符号是一个函数或变量的定义，那么符号的值就是这个函数或变量的地址。
 
-- 在目标文件中，如果是符号的定义并且该符号不是`"COMMON块"类型`的，则st_value表示`该符号在段中的偏移。`比如SimpleSection.o中的"func1"、"main"、"global_init_var"。
+- 在目标文件中，如果是符号的定义并且该符号不是=="COMMON块"类型==的，则st_value表示==该符号在段中的偏移==。比如SimpleSection.o中的"func1"、"main"、"global_init_var"。
 - 在目标文件中，如果符号是"COMMON块"，st_value表示该符号的对齐属性。比如SimpleSection.o中的"global_uninit_var"。
 - 在可执行文件中，st_value表示符号的虚拟地址。
 使用readelf -s查看符号表
@@ -476,3 +476,189 @@ Symbol table '.symtab' contains 13 entries:
     12: 000000000000002b    57 FUNC    GLOBAL DEFAULT    1 main
 ```
 ### 5.2 特殊符号
+```c
+// SpecialSymbol.c
+#include <stdio.h>
+
+extern char __executable_start[];
+extern char etext[], _etext[], __etext[];
+extern char edata[], _edata[];
+extern char end[], _end[];
+
+int main() {
+  printf("Executable Start %X\n", __executable_start);
+  printf("Text End %X %X %X\n", etext, _etext, __etext);
+  printf("Data End %X %X\n", edata, _edata);
+  printf("Executable End %X %X\n", end, _end);
+  return 0;
+}
+```
+```bash
+$> ./SpecialSymbol
+Executable Start 9004000
+Text End 9005205 9005205 9005205
+Data End 9008010 9008010
+Executable End 9008018 9008018
+```
+
+> [!tip]
+> __executable_start: 程序起始地址，注意不是入口地址。
+> etext, _etext, __etext: 代码段结束地址。
+> edata, _edata: 数据段结束地址。
+> end, _end: 程序结束地址。
+> 地址都为虚拟地址。
+### 5.3 符号修饰与函数签名
+> [!tip]
+> UNIX下c语言规定：c语言源代码文件中的所有全局的变量和函数经过编译后，相应的符号名前加上下划线"_"。比如一个c函数"foo"，当它经过编译后的符号名就为"_foo"。但是当程序规模很大时仍然会出现明明冲突的问题，于是像c++增加了==命名空间(namespace)==的方法来解决多模块的符号冲突问题。
+> 现在的Linux下的GCC编译器中，默认情况下已经去掉了在c语言符号前加"_"的这种方式。GCC编译器也可以通过=="-fleading-underscore"==或者=="-fno-leading-underscore"==来打开和关闭是否在c语言符号前加上"_"
+
+#### 5.3.1 c++ 符号修饰
+```cpp
+int func(int);
+float func(float);
+
+class C {
+  int func(int);
+  class C2{
+    int func(int);
+  };
+};
+
+namespace N {
+  int func(int);
+  class C {
+    int func(int);
+  };
+};
+```
+> [!note]
+> 函数签名(Function Signature): 包含了一个函数的信息，包括函数名、参数类型、它所在的类和名称空间及其它信息。
+> 名称修饰(Name Decoration): 在编译器及连接器处理符号时，使用某种名称修饰的方法，使得每个函数签名对应一个修饰后名称(Decorated Name)。
+
+![c++名称修饰](/image/chapter02/c++名称修饰.png)
+> [!tip]
+> 所有符号都以"_Z"开头，对于嵌套的名字(在名称空间或在类里面的)，后面紧跟"N"，然后是各个名称空间和类的名字，每个名字前是名字字符串长度，再以"E"结尾。比如N::C::func经过名称修饰后就是_ZN1N1C4funcE。对于一个函数来说，它的参数列表紧跟在"E"后面，对于int类型来说,字母就是"i"。所以整个N::C::func(int)函数签名经过修饰为_ZN1N1C4funcEi。
+
+> [!note]
+> 可以通过"c++filt"的工具来解析被修饰的名称。
+
+```bash
+$> c++filt _ZN1N1C4funcEi
+N::C::func(int)
+```
+
+> [!tip]
+> c++中的全局变量和静态变量也有同样的机制。比如foo命名空间下的bar变量(foo::bar)，经过修饰后的名字为: _ZN3far3barE。可以注意到变量的类型并没有加入到修饰后的名称中去。所以不论这个变量是整形还是浮点型甚至是全局对象，它的名称都是一样的。
+> 名称修饰机制也被用来防止静态变量的名字冲突。比如main()函数里面的静态变量foo，和func()函数的静态变量foo会被GCC编译器会将他们修饰为：_ZZ4mainE3foo和_ZZ4funcE3foo。
+
+### 5.4 extern "C"
+> [!note]
+> c++编译器会将extern "C"的大括号内部的代码当作c语言代码处理。所以c++名称修饰会对其不起作用。
+
+```cpp
+// func和var不会被c++的名称修饰规则修饰。
+extern "C" {
+  int func(int);
+  int var;
+}
+// 或者写成
+extern "C" int func(int);
+extern "C" int var;
+```
+
+```cpp
+// ManualNameMangling.cc
+// g++ ManualNameMangling.cc -o ManualNameMangling
+#include <stdio.h>
+
+namespace myname {
+int var = 42;
+}
+
+extern "C" double _ZN6myname3varE;
+
+int main() {
+  printf("%d\n", myname::var);
+  return 0;
+}
+```
+
+```bash
+$> ./ManualNameMangling
+42
+```
+### 5.5 强符合与弱符号
+> [!note]
+> 深入理解计算机系统(csapp)一书中也有讲解。了解本小节将有助于帮助理解链接过程中为什么会出现`重复定义`的问题。
+
+```c
+// a.c
+int global = 1;
+// b.c
+int global = 2;
+// 由于global重复定义链接时将会出现重定义错误。
+```
+符号的定义通常被称为==强符号(Strong Symbol)==。有些符号的定义也被称为==弱符号(Weak Symbol)==
+> [!note]
+> c/c++编译器默认函数和初始化了的全局变量为强符号，未初始化的全局变量为弱符号。可以通过GCC编译器提供的"__attribute__((weak))" 来定义任何一个强符号为弱符号。
+> 需要注意的是：强符号和弱符号都是针对定义的，不是针对符号的引用。
+
+```c
+extern int ext; // 这是一个引用，所以即不是强符号也不是弱符号。
+int weak; // 弱符号
+int strong = 1; // 强符号
+__attribute__((weak)) weak2 = 2; // 弱符号
+
+// 强符号
+int main() {
+  return 0;
+}
+```
+连接器按如下规则处理与选择被多次定义的全局符号
+> [!tip]
+> - 不允许被多次定义(既不同的目标文件中不能有同名的强符号)，如果出现多个强符号定义，则链接器报符号重定义错误。
+> - 如果一个符号在某个文件中是强符号，在其它文件为弱符号，那么选强符号。
+> - 如果一个符号在所有目标文件中都是弱符号，那么选其中占用空间最大的一个。比如文件A声明符号(未初始化)global为int(4byte)，目标文件B声明符号(未初始化)global为double(8byte)。当A和B链接时，符号global占8byte。(最好不要这样负责会出现一些意想不到的bug，而且很难发现)
+
+#### 弱引用和强引用
+> [!tip]
+> ==强引用(Strong Reference)==: 对外部目标文件的符号引用在目标文件被最终链接成可执行文件时，他们需要被正确决议，如果没有找到该符号的定义，链接器就会报服啊后未定义的错误，这种被称为==强引用(Strong Reference)==。
+> ==弱引用(Weak Reference)==: 在处理弱引用时，如果该符号有定义，则连接器将该符号的引用决议；如果该符号未被定义，则连接器对于该引用不报错。
+> 对于未定义的弱引用，连接器默认其为0，或者是一个特殊的值，以便于程序代码能够识别。
+
+```c
+// 通过使用__attribute__ ((weakref))声明对一个外部函数的引用为弱引用。
+__attribute__ ((weakref)) void foo();
+
+int main() {
+  if (foo) foo();
+}
+```
+
+```c
+// pthread.c
+// 通过使用__attribute__ ((weakref))判断是否链接到pthread库。
+#include <stdio.h>
+#include <pthread.h>
+
+int pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *) __attribute__ ((weak));
+
+int main() {
+  if (pthread_create) {
+    printf("This is multi-thread version!\n");
+  } else {
+    printf("This is single-thread version!\n");
+  }
+}
+```
+```bash
+$> gcc pthread.c -o pt
+$> ./pt
+This is single-thread version!
+$> gcc pthread.c -o pt -lpthread
+$> ./pt
+This is multi-thread version!
+```
+### 5.6 调试信息
+> [!note]
+> 可以使用readelf查看`debug`相关的段
