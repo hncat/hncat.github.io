@@ -1,10 +1,14 @@
 ---
 title: 第一章 编译和链接
-date: 2024-06-22 23:29:53
+date: 2024-06-22
 tags:
     - 计算机基础
     - c/c++
 categories: 链接、装载与库
+isOriginal: true
+order: 1
+dir:
+    order: 1
 ---
 ## 1. 被隐藏的过程
 ```c

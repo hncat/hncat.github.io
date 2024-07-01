@@ -1,10 +1,14 @@
 ---
 title: 第二章 目标文件
-date: 2024-06-22 23:52:32
+date: 2024-06-22
 tags:
     - 计算机基础
     - c/c++
 categories: 链接、装载与库
+isOriginal: true
+order: 2
+dir:
+    order: 2
 ---
 ## 1. 目标文件的格式
 Linux下的主流文件存储格式为==ELF==，通过file指令可以查看文件的存储格式。
@@ -451,7 +455,7 @@ typedef struct
 > [!tip]
 > 每个符号都有一个对应的值，如果这个符号是一个函数或变量的定义，那么符号的值就是这个函数或变量的地址。
 
-- 在目标文件中，如果是符号的定义并且该符号不是=="COMMON块"类型==的，则st_value表示==该符号在段中的偏移==。比如SimpleSection.o中的"func1"、"main"、"global_init_var"。
+- 在目标文件中，如果是符号的定义并且该符号不是“==COMMON块==”类型的，则st_value表示==该符号在段中的偏移==。比如SimpleSection.o中的"func1"、"main"、"global_init_var"。
 - 在目标文件中，如果符号是"COMMON块"，st_value表示该符号的对齐属性。比如SimpleSection.o中的"global_uninit_var"。
 - 在可执行文件中，st_value表示符号的虚拟地址。
 使用readelf -s查看符号表
