@@ -261,8 +261,8 @@ a.o:     file format elf64-x86-64
 
 RELOCATION RECORDS FOR [.text.startup]:
 OFFSET           TYPE              VALUE
-000000000000000b R_X86_64_PC32     shared-0x0000000000000004 # 这是shared的前一个字节的位置并不是shared的位置
-000000000000002d R_X86_64_PLT32    swap-0x0000000000000004 # 和shared一样并不swap的位置
+000000000000000b R_X86_64_PC32     shared-0x0000000000000004 # pc（下一条指令） - 0x04
+000000000000002d R_X86_64_PLT32    swap-0x0000000000000004
 0000000000000049 R_X86_64_PLT32    __stack_chk_fail-0x0000000000000004
 
 
@@ -283,17 +283,95 @@ Relocation section '.rela.text.startup' at offset 0x1e8 contains 3 entries:
 ```
 每一个被重定位的地方叫一个==重定位入口(Relocation Entry)==，其中每个重定位表包含了一下信息：
 1. 重定位入口的==偏移(offset)==，表示该入口在要被重定位段中的位置。
-2. 该重定位表作用的elf文件中的那个段==RELOCATION RECORDS FOR [.text.startup](比如这个就是代码段)==。
+2. 该重定位表作用的elf文件中的那个段==RELOCATION RECORDS FOR \[.text.startup\](比如这个就是代码段)==。
 ```c
 // 重定位表的结构
-typedef struct {
-  Elf64_Addr    r_offset; /* Address */
-  Elf64_Xword   r_info;   /* Relocation type and symbol index */                                                                  
+typedef struct
+{
+  Elf64_Addr	r_offset;		/* Address */
+  Elf64_Xword	r_info;			/* Relocation type and symbol index */
 } Elf64_Rel;
 ```
+![重定位表结构](/image/chapter03/重定位表结构.png)
 
 ### 2.3 符号解析
-### 2.4 指令修正方式
+```bash
+# 符号未定义错误 (未正确链接目标文件或者库文件导致)
+$> gcc a.c
+a.c: In function ‘main’:
+a.c:5:3: warning: implicit declaration of function ‘swap’ [-Wimplicit-function-declaration]
+    5 |   swap(&a, &shared);
+      |   ^~~~
+/usr/bin/ld: /tmp/ccwmM6Jl.o: warning: relocation against `shared' in read-only section `.text'
+/usr/bin/ld: /tmp/ccwmM6Jl.o: in function `main':
+a.c:(.text+0x29): undefined reference to `shared'
+/usr/bin/ld: a.c:(.text+0x39): undefined reference to `swap'
+/usr/bin/ld: warning: creating DT_TEXTREL in a PIE
+collect2: error: ld returned 1 exit status
+```
+
+> [!note]
+> 重定位的过程也伴随着符号解析的过程。每个目标文件都可能定义一些符号，也可能引用其它目标文件的符号。重定位过程中，每个重定位入口都是对一个符号的引用，那么当连接器需要对某个符号的引用进行重定位时，就要确定这个符号的目的地址。这时候连接器就会查找所有输入目标文件的符号表组成的全局符号表，找到相应的符号后进行重定位。
+
+> [!note]
+> 需要补充的一点是linux链接器在符号解析阶段，链接器是从左到右按照它们在编译器取得程序命令行上出现的顺序来扫描可重定位目标文件和存档文件(静态库)的。链接器维护一个可重定位目标文件的集合E（这个集合中的文件会被合并起来形成可执行文件），一个未解析的符号集合U（即引用了但尚未定义的符号），以及一个在前面输入文件中已定义的符号集合D。
+>
+> ·对于命令行上的每个输入文件 f, 链接器会判断f是一个目标文件还是一个存档文件。如果f是一个目标文件，那么链接器把f添加到E, 修改U和D来反映f中的符号定义和引用，并继续下一个输入文件。
+>
+> ·如果f是一个存档文件，那么链接器就尝试匹配U中未解析的符号和由存档文件成员定义的符号。如果某个存档文件成员m, 定义了一个符号来解析U中的一个引用，那将m加到么就E中，并且链接器修改U和D来反映m中的符号定义和引用。对存档文件中所有的成员目标文件都依次进行这个过程，直到U和D都不再发生变化。此时，任何不包含在E中的成员目标文件都简单地被丢弃，而链接器将继续处理下一个输入文件。
+>
+> ·如果当链接器完成对命令行上输入文件的扫描后，U是非空的，那么链接器就会输出一个错误并终止。否则，它会合并和重定位E中的目标文件，构建输出的可执行文件。
+>
+> 这样的解析通常会伴随一个顺序问题，比如文件foo.c依赖与liba.a。当输入指令如下时就会出现符号未定义错误。
+> ```bash
+> # 错误的
+> $> gcc -static ./liba.a foo.c
+> # 正确的
+> $> gcc -static foo.c ./liba.a
+> ```
+> 因为链接器时从左到右开始扫描的，而静态库文件（存档文件）liba.a先于foo.c文件所以就会执行上述的存档文件的操作导致foo.c依赖的文件不会并入集合中。最终导致符号未定义行为，特别是出现相互依赖的库文件时更容易出现这种错误。
+> foo.c 依赖 liba.a, liba.a 依赖 libb.a, libb.a 依赖 liba.a
+> ```bash
+> # 错误的
+> $> gcc -static foo.c ./liba.a ./libb.a
+> # 正确的
+> $> gcc -static foo.c ./liba.a ./libb.a ./liba.a
+> ```
+> ==csapp 第七章 7.6.3==
+
+使用readelf -s指令查看a.o的符号表:
+```bash
+$>  readelf -s a.o
+
+Symbol table '.symtab' contains 7 entries:
+   Num:    Value          Size Type    Bind   Vis      Ndx Name
+     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND
+     1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS a.c
+     2: 0000000000000000     0 SECTION LOCAL  DEFAULT    1 .text
+     3: 0000000000000000    88 FUNC    GLOBAL DEFAULT    1 main
+     4: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND shared
+     5: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND swap
+     6: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND __stack_chk_fail
+```
+> [!important]
+> ==GLOBAL==类型的符号，除了"main"函数是定义在代码段之外，其它几个"shared"，"swap"，"__stack_chk_fail"都是==UND（undefined）未定义的类型==，这种未定义的符号都是该目标文件的==重定位项==。所以在链接器扫描完所有的输入目标文件后，所有这些未定义的符号都应该能在==全局符号表==中找到，否则链接就会报符号==未定义错误==。
+
+### 2.4 指令修正方式(参考csapp)
+```c
+// csapp提到的另一种重定位结构
+// r_addend: 有符号常数，一些类型的重定位要使用它对被修改引用的值做偏移调整。
+typedef struct
+{
+  Elf64_Addr	r_offset;		/* Address */
+  Elf64_Xword	r_info;			/* Relocation type and symbol index */
+  Elf64_Sxword	r_addend;		/* Addend */
+} Elf64_Rela;
+```
+
+elf定义了32种不同的重定位类型。我们只关心其中两种最基本的重定位类型：
+- R_X86_64_PC32。
+- R_X86_64_32
+
 ## 3. COMMON块
 ## 4. c++相关问题
 ## 5. 静态库链接
