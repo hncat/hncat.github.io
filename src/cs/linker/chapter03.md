@@ -250,7 +250,47 @@ Idx Name          Size      VMA               LMA               File off  Algn
 > ```
 
 ### 2.2 重定位表
+> [!note]
+> 使用objdump/readelf指令可以查看重定位文件。因为重定位表其实就是elf文件中的一个段，因此又被称为重定位段，比如代码段".text"如果有要重定位的地方，那么会有一个相应的叫".rel.text"的段保存了代码段的重定位表，同理".data"也会有一个叫".rel.data"的段。
 
+```bash
+# a.o中所有要重定位的地方，既“a.o”所有引用到的外部符号。
+$> bjdump -r a.o
+
+a.o:     file format elf64-x86-64
+
+RELOCATION RECORDS FOR [.text.startup]:
+OFFSET           TYPE              VALUE
+000000000000000b R_X86_64_PC32     shared-0x0000000000000004 # 这是shared的前一个字节的位置并不是shared的位置
+000000000000002d R_X86_64_PLT32    swap-0x0000000000000004 # 和shared一样并不swap的位置
+0000000000000049 R_X86_64_PLT32    __stack_chk_fail-0x0000000000000004
+
+
+RELOCATION RECORDS FOR [.eh_frame]:
+OFFSET           TYPE              VALUE
+0000000000000020 R_X86_64_PC32     .text.startup
+$> readelf -r a.o
+
+Relocation section '.rela.text.startup' at offset 0x1e8 contains 3 entries:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+  00000000000b  000400000002 R_X86_64_PC32     0000000000000000 shared - 4
+  00000000002d  000500000004 R_X86_64_PLT32    0000000000000000 swap - 4
+  000000000049  000600000004 R_X86_64_PLT32    0000000000000000 __stack_chk_fail - 4
+
+  Relocation section '.rela.eh_frame' at offset 0x230 contains 1 entry:
+    Offset          Info           Type           Sym. Value    Sym. Name + Addend
+    000000000020  000200000002 R_X86_64_PC32     0000000000000000 .text.startup + 0
+```
+每一个被重定位的地方叫一个==重定位入口(Relocation Entry)==，其中每个重定位表包含了一下信息：
+1. 重定位入口的==偏移(offset)==，表示该入口在要被重定位段中的位置。
+2. 该重定位表作用的elf文件中的那个段==RELOCATION RECORDS FOR [.text.startup](比如这个就是代码段)==。
+```c
+// 重定位表的结构
+typedef struct {
+  Elf64_Addr    r_offset; /* Address */
+  Elf64_Xword   r_info;   /* Relocation type and symbol index */                                                                  
+} Elf64_Rel;
+```
 
 ### 2.3 符号解析
 ### 2.4 指令修正方式
