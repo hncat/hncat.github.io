@@ -356,7 +356,7 @@ Symbol table '.symtab' contains 7 entries:
 > [!important]
 > ==GLOBAL==类型的符号，除了"main"函数是定义在代码段之外，其它几个"shared"，"swap"，"__stack_chk_fail"都是==UND（undefined）未定义的类型==，这种未定义的符号都是该目标文件的==重定位项==。所以在链接器扫描完所有的输入目标文件后，所有这些未定义的符号都应该能在==全局符号表==中找到，否则链接就会报符号==未定义错误==。
 
-### 2.4 指令修正方式(参考csapp)
+### 2.4 指令修正方式(参考csapp，原书第七章 7.7)
 ```c
 // csapp提到的另一种重定位结构
 // r_addend: 有符号常数，一些类型的重定位要使用它对被修改引用的值做偏移调整。
@@ -369,11 +369,57 @@ typedef struct
 ```
 
 elf定义了32种不同的重定位类型。我们只关心其中两种最基本的重定位类型：
-- R_X86_64_PC32。
-- R_X86_64_32
+- R_X86_64_PC32。重定位一个使用32位PC相对地址的引用。一个PC相对地址就是距程序计数器(PC)的当前运行时值的偏移量。CPU执行一条使用PC相对寻址的指令时，它就将在指令中编码的32位值加上PC的当前运行时值，得到有效地址，PC值通常是下一条指令在内存中的值。
+- R_X86_64_32。重定位一个使用32位绝对地址的引用。CPU直接使用在指令中编码的32值作为有效地址，不需要进一步修改。
+
+> [!important]
+> 这两种重定位类型支持x86-64小型代码模型(small code model)，该模型假设可执行目标文件中的代码和数据的总体大小小于2GB，因此在运行时可以用32位PC相对地址来访问。GCC默认使用小型代码模型。大于2GB的程序可以使用-mcmodel=medium(中型代码模型)和-mcmodel=large(大型代码模型)标志来编译。
+
+```
+foreach section s {
+  foreach relocation entry r {
+    refptr = s + r.offset; // 需要修改的重定位地址
+    if (r.type == R_X86_64_PC32) {
+      refaddr = ADDR(s) + r.offset; // 运行时引用符号的地址
+      *refptr = (unsigned)(ADDR(r.symbol) + r.addend - refaddr); // 被引用的符号地址 + 修正值 - 运行时引用符号地址。
+    }
+    if (r.type == R_X86_64_32) {
+      *refptr = (unsigned)(ADDR(r.symbol) + r.addend);
+    }
+  }
+}
+```
 
 ## 3. COMMON块
-## 4. c++相关问题
-## 5. 静态库链接
-## 6. 链接过程控制
-## 7. BFD库
+> [!note]
+> COMMON块的机制来源于Fortran，早期的Fortran没有动态分配空间的机制，所以必须事先声明它所需的临时使用空间的大小。Fortran把这种空间叫COMMON块，当不同的目标文件需要的COMMON块空间大小不一致时，以最大的那块为准。
+> 现代的链接机制在处理弱符号时，采用的就是与COMMON块一样的机制。当然COMMON块的链接规则仅仅是针对弱符号的，如果其中有一个符号为强符号时，那么最终输出结果中的符号所占空间与强符号相同。
+> 值得注意的是，如果链接过程中有弱符号大于强符号所使用的内存大小，那么链接器通常会给出警告。
+> /usr/bin/ld: warning: alignment 4 of symbol `global' in /tmp/ccjFgL1Q.o is smaller than 8 in /tmp/ccVEFqSm.o
+
+另外值得注意的是可能有些编译器并不是将弱符号使用COMMON块，而是使用的bss段，因此会报重定义错误。此时可以给编译选项加上--common选项即可。
+
+## 4. 静态库链接
+> [!note]
+> 静态库可以简单的看成一组目标文件的集合，既很多目标文件经过压缩打包后形成的一个文件。
+
+使用"ar"工具查看这个文件包含了那些目标文件：
+```bash
+$> ar -t /usr/lib/x86_64-linux-gnu/libc.a
+```
+使用objdump指令查看某个符号在那个文件中
+```bash
+$> objdump -t /usr/lib/x86_64-linux-gnu/libc.a | grep vprintf
+vprintf.o:     file format elf64-x86-64
+0000000000000000 g     F .text  0000000000000018 __vprintf
+0000000000000000 g     F .text  0000000000000018 vprintf
+0000000000000160 g     F .text  00000000000001c9 .hidden __obstack_vprintf_internal
+0000000000000330 g     F .text  00000000000001c4 __obstack_vprintf
+0000000000000330  w    F .text  00000000000001c4 obstack_vprintf
+vprintf_chk.o:     file format elf64-x86-64
+0000000000000000 g     F .text  0000000000000019 ___vprintf_chk
+0000000000000000 g     F .text  0000000000000019 __vprintf_chk
+0000000000000000         *UND*  0000000000000000 .hidden __obstack_vprintf_internal
+0000000000000000 g     F .text  000000000000001c __obstack_vprintf_chk
+0000000000000000         *UND*  0000000000000000 .hidden __obstack_vprintf_interna
+```
