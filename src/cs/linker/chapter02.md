@@ -36,7 +36,7 @@ ELF文件标准里采用ELF格式的文件:
 > 源代码编译后的机器指令经常放于代码段(.text)
 > 全局变量和局部静态变量经常存放于数据段(.data)
 
-![程序与目标文件](/image/chapter02/程序与目标文件.png)
+![程序与目标文件](/image/linker/chapter02/程序与目标文件.png)
 ELF文件的开头是一个“文件头”，描述了整个文件的文件属性。
 - 是否可执行
 - 是否静态链接
@@ -228,12 +228,12 @@ Symbol table '.symtab' contains 13 entries:
     12: 000000000000002b    57 FUNC    GLOBAL DEFAULT    1 main
 ```
 ### 3.3 其它段
-![其它段](/image/chapter02/其他段.png)
+![其它段](/image/linker/chapter02/其他段.png)
 ## 4. ELF文件结构描述
 > [!note]
 > ELF目标文件的最前部是ELF文件头（ELF Header）,它包含了描述整个文件的基本属性。仅接着是ELF各个段。其中ELF文件中与段有关的重要结构就是段表（Section Header Table），该表描述了ELF文件包含的所有段的信息，比如每个段的段名、段的长度、在文件中的偏移、读写权限及段的其它属性。
 
-![ELF文件结构](/image/chapter02/ELF文件结构.png)
+![ELF文件结构](/image/linker/chapter02/ELF文件结构.png)
 ### 4.1 文件头
 通过使用==readelf -h==指令即可查看ELF文件头
 ```bash
@@ -293,11 +293,11 @@ typedef struct
   Elf64_Half	e_shstrndx;		/* Section header string table index */
 } Elf64_Ehdr;
 ```
-![ELF文件头结构成员含义](/image/chapter02/ELF文件头结构成员含义.png)
+![ELF文件头结构成员含义](/image/linker/chapter02/ELF文件头结构成员含义.png)
 #### 4.1.2 文件类型
-![文件类型](/image/chapter02/文件类型.png)
+![文件类型](/image/linker/chapter02/文件类型.png)
 #### 4.1.3 机器类型
-![机器类型](/image/chapter02/机器类型.png)
+![机器类型](/image/linker/chapter02/机器类型.png)
 ### 4.2 段表
 > [!tip]
 > 段表用于保存这些段的基本属性结构。
@@ -366,9 +366,9 @@ typedef struct
   Elf64_Xword	sh_entsize;		/* Entry size if section holds table */
 } Elf64_Shdr;
 ```
-![Elf64_Shdr](/image/chapter02/Elf64_Shdr结构含义.png)
+![Elf64_Shdr](/image/linker/chapter02/Elf64_Shdr结构含义.png)
 段表结构解析
-![段结构解析](/image/chapter02/段结构分析.png)
+![段结构解析](/image/linker/chapter02/段结构分析.png)
 > [!note]
 > elf文件头中指出了段表位于文件的偏移(Elf64_Ehdr的e_shoff元素)为1032(0x408)，代码段(.text)位于elf文件头后所以elf文件头的大小正好为代码段的偏移0x40(64)字节，段表的最后一个元素(.shstrtab)的偏移量为0x390文件大小为0x74。而0x408 = 0x390 + 0x74 + 0x04正好是段表在elf文件中的偏移(之所以+0x04是因为内存对齐的原因)。
 
@@ -376,32 +376,32 @@ typedef struct
 > [!tip]
 > 对于编译器和链接器来说，主要决定段的属性的是段的类型(sh_type)和段的标志位(sh_flags)
 
-![段的类型](/image/chapter02/段的类型.png)
+![段的类型](/image/linker/chapter02/段的类型.png)
 ##### 4.2.1.2 段的标志位(sh_flags)
 > [!tip]
 > 决定了该段在进程虚拟地址空间中的属性，比如是否可写，是否可执行等。
 
-![段的标志位](/image/chapter02/段的标志位.png)
+![段的标志位](/image/linker/chapter02/段的标志位.png)
 ##### 4.2.1.3 段的链接信息(sh_link、sh_info)
 > [!tip]
 > 只有段的类型是与链接(动态链接、静态链接、重定位表、符号表等)相关时这两个成员才会有意义。
 
-![段的链接信息](/image/chapter02/段的链接信息.png)
+![段的链接信息](/image/linker/chapter02/段的链接信息.png)
 ### 4.3 重定位表
 > [!tip]
 > 在SimpleSection.o中有一个叫做".rela.text"的段, 它的类型(sh_type)为"SH_RELA", 也就是说它是一个重定位表。
 > 对于每个需要重定位的段，都会有一个相应的重定位表。比如".rela.text"是".text"的重定位表。
 > 一个重定位表同时也是elf的一个段, 那么这个段的类型(sh_type)就是"SHL_REL", 它的"sh_link"表示符号表的下标, "sh_info"表示它作用于那个段。
 
-![重定位表](/image/chapter02/重定位表.png)
+![重定位表](/image/linker/chapter02/重定位表.png)
 ### 4.4 字符串表
 > [!tip]
 > elf文件中用到了很多字符串，比如段名、变量名等。因为字符串的长度往往是不定的，所以用固定的结构来表示它比较困难。一种常见的做法是把字符串集中起来存放到一个表，然后使用字符串在表中的偏移来引用字符串。
 > .strtab: 字符串表(string table)
 > .shstrtab: 段表字符串表(section header string table)
 
-![字符串表](/image/chapter02/字符串表.png)
-![段表字符串表](/image/chapter02/段表字符串表分析.png)
+![字符串表](/image/linker/chapter02/字符串表.png)
+![段表字符串表](/image/linker/chapter02/段表字符串表分析.png)
 ## 5. 链接的接口-符号(Symbol)
 > [!tip]
 > 链接的过程就是把多个不同的目标文件之间相互衔接的过程。这个相互衔接的过程实际上是目标文件之间对地址的引用。
@@ -440,17 +440,17 @@ typedef struct
   Elf64_Xword	st_size;		/* Symbol size */
 } Elf64_Sym;
 ```
-![ELF符号表结构](/image/chapter02/ELF符号表结构.png)
+![ELF符号表结构](/image/linker/chapter02/ELF符号表结构.png)
 #### 5.1.1 符号类型和绑定类型(st_info)
 > [!tip]
 > 低4位表示`符号类型(Symbol Type)`, 高28位表示`符号绑定信息(Symbol Binding)`
 
-![符号类型和绑定](/image/chapter02/符号类型和绑定.png)
+![符号类型和绑定](/image/linker/chapter02/符号类型和绑定.png)
 #### 5.1.2 符号所在段(st_shndx)
 > [!tip]
 > 如果符号定义在本目标文件中，那么这个成员表示符号所在的段在段表中的下标，如果符号不是定义在本目标文件中，或者对于有些特殊符号，sh_shndx的值会有些特殊。
 
-![符号所在段](/image/chapter02/符号所在段.png)
+![符号所在段](/image/linker/chapter02/符号所在段.png)
 #### 5.1.3 符号值(st_value)
 > [!tip]
 > 每个符号都有一个对应的值，如果这个符号是一个函数或变量的定义，那么符号的值就是这个函数或变量的地址。
@@ -539,7 +539,7 @@ namespace N {
 > 函数签名(Function Signature): 包含了一个函数的信息，包括函数名、参数类型、它所在的类和名称空间及其它信息。
 > 名称修饰(Name Decoration): 在编译器及连接器处理符号时，使用某种名称修饰的方法，使得每个函数签名对应一个修饰后名称(Decorated Name)。
 
-![c++名称修饰](/image/chapter02/c++名称修饰.png)
+![c++名称修饰](/image/linker/chapter02/c++名称修饰.png)
 > [!tip]
 > 所有符号都以"_Z"开头，对于嵌套的名字(在名称空间或在类里面的)，后面紧跟"N"，然后是各个名称空间和类的名字，每个名字前是名字字符串长度，再以"E"结尾。比如N::C::func经过名称修饰后就是_ZN1N1C4funcE。对于一个函数来说，它的参数列表紧跟在"E"后面，对于int类型来说,字母就是"i"。所以整个N::C::func(int)函数签名经过修饰为_ZN1N1C4funcEi。
 

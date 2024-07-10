@@ -17,6 +17,8 @@ export default hopeTheme({
 
   repo: "hncat",
 
+  favicon: "/far-logo.png",
+
   darkmode: "switch",
 
   fullscreen: true,
@@ -32,7 +34,7 @@ export default hopeTheme({
   sidebar,
 
   // 页脚
-  footer: "默认页脚",
+  footer: "",
   displayFooter: true,
 
   // 博客相关
