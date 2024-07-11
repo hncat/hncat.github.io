@@ -188,7 +188,7 @@ Program Headers:
 
 > [!note]
 > 装载时重定位是解决动态模块中没有绝对地址应用的办法之一，但是有一个很大的缺点是指令部分无法在多个进程之间共享，这样就失去了动态链接节省内存的一大优势。
-> 现在我们希望程序模块中共享的指令部分在装载时不需要因为装载地址的改变而改变，所以我们只需要将指令中那些需要被修改的部分进行剥离，和数据部分放在一起，这样指令部分就可以保持不变，而数据部分可以在每个进程中拥有一个副本。这种方案就是==地址无关代码(PIC, Position-independent Code)==。
+> 现在我们希望程序模块中共享的指令部分在装载时不需要因为装载地址的改变而改变，所以我们只需要将指令中那些需要被修改的部分进行剥离，和数据部分放在一起，这样指令部分就可以保持不变，而数据部分可以在每个进程中拥有一个副本。这种方案就是==地址无关代码(PIC, Position-Independent Code)==。
 
 将共享对象中的地址引用按照是否跨模块分为: ==模块内部引用和模块外部引用==。
 
@@ -199,14 +199,17 @@ Program Headers:
 - 模块内部的数据访问，比如模块中定义的全局变量、静态变量。
 - 模块外部的函数调用、跳转等。
 - 模块外部的数据访问，比如其它模块中定义的全局变量。
+
+1. bar为非静态函数时
 ```c
+// pic.c
 static int a;
 extern int b;
 extern void ext();
 
 void bar() {
   a = 1; // 模块内部数据访问
-  b= 2;  // 模块外部数据访问
+  b = 2;  // 模块外部数据访问
 }
 
 void foo() {
@@ -214,14 +217,27 @@ void foo() {
   ext(); // 模块外部函数调用
 }
 ```
-
+```bash
+$> gcc -shared -fPIC pic.c -o libpic.so
+```
 ```asm
-// bar为非静态函数时
+Disassembly of section .plt.sec:
+
+0000000000001060 <ext@plt>:
+    1060:       f3 0f 1e fa             endbr64
+    1064:       ff 25 96 2f 00 00       jmp    *0x2f96(%rip)        # 4000 <ext>
+    106a:       66 0f 1f 44 00 00       nopw   0x0(%rax,%rax,1)
+
+0000000000001070 <bar@plt>:
+    1070:       f3 0f 1e fa             endbr64
+    1074:       ff 25 8e 2f 00 00       jmp    *0x2f8e(%rip)        # 4008 <bar+0x2ecf>
+    107a:       66 0f 1f 44 00 00       nopw   0x0(%rax,%rax,1)
+
 0000000000001139 <bar>:
     1139:       f3 0f 1e fa             endbr64
-    113d:       c7 05 ed 2e 00 00 01    movl   $0x1,0x2eed(%rip)        # 4034 <a>
+    113d:       c7 05 d5 2e 00 00 01    movl   $0x1,0x2ed5(%rip)        # 401c <a>
     1144:       00 00 00
-    1147:       48 8b 05 8a 2e 00 00    mov    0x2e8a(%rip),%rax        # 3fd8 <b>
+    1147:       48 8b 05 72 2e 00 00    mov    0x2e72(%rip),%rax        # 3fc0 <b>
     114e:       c7 00 02 00 00 00       movl   $0x2,(%rax)
     1154:       c3                      ret
 
@@ -235,7 +251,7 @@ void foo() {
     1171:       48 83 c4 08             add    $0x8,%rsp
     1175:       c3                      ret
 ```
-
+2. bar静态函数时
 ```c
 static int a;
 extern int b;
@@ -243,7 +259,7 @@ extern void ext();
 
 static void bar() {
   a = 1; // 模块内部数据访问
-  b= 2;  // 模块外部数据访问
+  b = 2;  // 模块外部数据访问
 }
 
 void foo() {
@@ -251,13 +267,14 @@ void foo() {
   ext(); // 模块外部函数调用
 }
 ```
-
+```bash
+$> gcc -shared -fPIC pic.c -o libpic.so
+```
 ```asm
-// bar非静态函数时
 0000000000001119 <bar>:
-    1119:       c7 05 09 2f 00 00 01    movl   $0x1,0x2f09(%rip)        # 402c <a>
+    1119:       c7 05 f1 2e 00 00 01    movl   $0x1,0x2ef1(%rip)        # 4014 <a>
     1120:       00 00 00
-    1123:       48 8b 05 ae 2e 00 00    mov    0x2eae(%rip),%rax        # 3fd8 <b>
+    1123:       48 8b 05 96 2e 00 00    mov    0x2e96(%rip),%rax        # 3fc0 <b>
     112a:       c7 00 02 00 00 00       movl   $0x2,(%rax)
     1130:       c3                      ret
 
@@ -283,11 +300,11 @@ void foo() {
 任何一条指令与它需要访问的模块内部数据之间的相对位置是固定的，那么只需要相对于当前指令(PC值)加上固定的偏移量就可以访问模块内部数据了。例如函数bar中的一段反汇编代码:
 ```asm
 # %rip既是对应的PC值(当前执行的下一条指令)
-113d:       c7 05 ed 2e 00 00 01    movl   $0x1,0x2eed(%rip)        # 4034 <a>
-1144:       00 00 00 # a内存地址进行了一次内存对齐，所以需要补0所以%rip实际值为0x1144
-1147:       48 8b 05 8a 2e 00 00    mov    0x2e8a(%rip),%rax        # 3fd8 <b>
+113d:       c7 05 d5 2e 00 00 01    movl   $0x1,0x2ed5(%rip)        # 401c <a>
+1144:       00 00 00 # a内存地址进行了一次内存对齐，所以需要补0所以%rip实际值为0x1147
+1147:       48 8b 05 72 2e 00 00    mov    0x2e72(%rip),%rax        # 3fc0 <b>
 ```
-假设该模块经过加载后位于虚拟内存的0x10000000处，那变量a所在的虚拟内存地址为: 0x2eed + 0x1147 + 0x10000000 = 0x10004034。
+假设该模块经过加载后位于虚拟内存的0x10000000处，那变量a所在的虚拟内存地址为: 0x2ed5 + 0x1147 + 0x10000000 = 0x1000401c。
 而通过查看符号表信息可以得到变量a所在elf文件中的位置:
 ```bash
 $> readelf -s libpic.so
@@ -296,7 +313,7 @@ $> readelf -s libpic.so
 ymbol table '.symtab' contains 29 entries:
    Num:    Value          Size Type    Bind   Vis      Ndx Name
     ...
-    10: 0000000000004034     4 OBJECT  LOCAL  DEFAULT   22 a # 0x1147 + 0x2eed = 0x4034
+    10: 000000000000401c     4 OBJECT  LOCAL  DEFAULT   22 a
     ...
 ...
 ```
@@ -306,7 +323,71 @@ ymbol table '.symtab' contains 29 entries:
 
 ![模块间数据访问](/image/linker/chapter05/模块间数据访问.png)
 
-## 4. 延迟般的(PLT)
+当指令需要访问变量b时，程序会先找到GOT，然后根据GOT中变量所对应的项找到变量的目标地址。链接器在装载模块的时候会查找每个变量所在的地址，然后填充GOT中的各个项，以确保每个指针所指向的地址正确。==由于GOT本身是放在数据段的，所以它可以在模块装载时被修改，并且每个进程都可以有独立的副本，相互不受影响==。
+
+> [!important]
+> GOT是如何实现指令的地址无关性的。模块在编译时可以确定模块内部变量相对于当前指令的偏移，那么我们也可以在编译时确定GOT相对于当前指令的偏移。确定GOT的位置和上面的访问变量a的方法基本一样，通过得到PC值然后加上偏移量，就可以得到GOT的位置。然后我们根据变量地址在GOT中的偏移量就可以得到变量的地址，当然GOT中每个地址对应于哪个变量是由编译器决定的，比如第一个地址对应变量b，第二个变量对应变量c等。
+
+假设共享库被加载到0x100000000的位置，观察函数bar()的反汇编代码。为访问变量b，程序首先计算出变量b的地址在GOT中的位置，即0x10000000 + 0x114e + 0x2e72 = 0x10003fc0
+
+查看GOT位置
+```bash
+$> readelf -S libpic.so
+There are 27 section headers, starting at offset 0x3548:
+
+Section Headers:
+  [Nr] Name              Type             Address           Offset
+       Size              EntSize          Flags  Link  Info  Align
+  ...
+  [19] .got              PROGBITS         0000000000003fc0  00002fc0
+       0000000000000028  0000000000000008  WA       0     0     8
+  ...
+```
+GOT在文件中的偏移为0x3fc0。查看动态链接时重定位项。
+```bash
+$> readelf -r libpic.so
+
+Relocation section '.rela.dyn' at offset 0x458 contains 8 entries:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+  ...
+  000000003fc0  000200000006 R_X86_64_GLOB_DAT 0000000000000000 b + 0
+  ...
+```
+观察到变量b的地址需要重定位，它位于0x3fc0，也就是GOT中偏移0，相当于是GOT中的第一项（每8字节一项）正好对应通过指令计算出的偏移量0x114e + 0x2e72 = 0x3fc0。
+
+**类型四 模块间调用、跳转**
+对于模块间调用和跳转，同样可以采用类型三的方法来解决。但是不同的是，GOT中相应的项保存的是目标函数的地址，当模块需要调用目标函数时，可以通过GOT中的项进行间接跳转基本原理如下图(这是原书可出的可能会和实际不同，但是不影响我们进行分析):
+
+![模块间调用、跳转](/image/linker/chapter05/模块间调用、跳转.png)
+
+```asm
+0000000000001060 <ext@plt>:
+    1060:       f3 0f 1e fa             endbr64
+    1064:       ff 25 96 2f 00 00       jmp    *0x2f96(%rip)        # 4000 <ext>
+    106a:       66 0f 1f 44 00 00       nopw   0x0(%rax,%rax,1)
+
+0000000000001155 <foo>:
+    1155:       f3 0f 1e fa             endbr64
+    1159:       48 83 ec 08             sub    $0x8,%rsp
+    115d:       b8 00 00 00 00          mov    $0x0,%eax
+    1162:       e8 09 ff ff ff          call   1070 <bar@plt>
+    1167:       b8 00 00 00 00          mov    $0x0,%eax
+    116c:       e8 ef fe ff ff          call   1060 <ext@plt>
+    1171:       48 83 c4 08             add    $0x8,%rsp
+    1175:       c3                      ret
+```
+
+观察到调用ext()函数时跳转到了"ext@plt"调用，而该函数内部实现依旧是跳转到GOT表中通过间接跳转实现对函数的调用(0x1064代码处调用)。
+> [!note]
+> 通过实际的分析发现函数的GOT表并不在.got段中而是在一个名为.got.plt段中(延迟绑定)这是对模块间调用、跳转的一种优化。
+
+**-fpic和-fPIC**
+从功能上来说完全一样，都是生成地址无关代码，“-fPIC”生成的代码要大，而“f-pic”生成的代码要小，而且较快。但是由于地址无关代码都是和硬件平台相关的，不同的平台有着不同的实现，“-fpic”在某些平台上会有一些限制，比如全局符号的数量或者代码的长度等，而“-fPIC”则没有这样的限制。所以为了方便，绝大多数情况下都使用”-fPIC“。
+
+**PIC和PIE**
+一个以地址无关方式编译的可执行文件被称为==地址无关可执行文件(PIE, Position-Independent Executable)==。对应GCC选项"-fpie"或"-fPIE"。
+
+## 4. 延迟绑定(PLT)
 ## 5. 动态链接相关结构
 ## 6. 动态链接的步骤和实现
 ## 7. 显示运行时链接
