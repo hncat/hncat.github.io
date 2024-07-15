@@ -497,5 +497,209 @@ int main() {
 PLT在ELF文件中以独立的段存放，段名叫".plt"。因为本身是一些地址无关代码，所以可以和代码段等一起合并成同一个可读可指向的“segment”被装载入内存。
 
 ## 5. 动态链接相关结构
+动态链接情况下，可执行文件的装载与静态链接情况基本一样。首先操作系统会读取可执行文件的头部，检查文件的合法性，然后从头部中的 =="Program Header"== 中读取每个 =="Segment"== 的虚拟地址、文件地址和属性，并将它们映射到进程虚拟空间的相应位置，这些步骤和静态链接情况下的装载基本无异。在静态链接情况下，操作系统接着就可以把控制权交给可执行文件的入口地址，然后程序开始执行。
+
+可是在动态链接情况下，操作系统还不能在装载完可执行文件之后就把控制权交给可执行文件，因为可执行文件==依赖于很多共享对象==。这时，可执行文件对于很多 ==外部符号的引用还处于无效地址的状态==，既还没有和相应的==共享对象中的实际位置链接起来==。所以在映射完可执行文件后，操作系统会先启动一个==动态链接器（Dynamic Linker）==。
+
+在Linux下，==动态链接器ld.so实际上是一个共享对象==，操作系统统一通过映射的方式将它加载到进程的地址空间中。操作系统在加载完动态链接器后，将控制权交给==动态链接器的入口地址（与可执行文件一样，共享对象也有入口地址）==。当动态链接器获得控制权后，便开始一系列自身的初始化操作，然后根据当前的环境参数，开始对可执行文件进行动态链接工作。当所有动态链接工作完成后，动态链接器会将控制权交给可执行文件的入口地址，程序开始正式执行。
+
+### 5.1 ".interp"段
+> [!note]
+> 动态链接去的位置既不是由系统配置指定，也不是由环境参数决定，而是由ELF可执行文件决定。在动态链接的ELF可执行文件中，有一个专门的段叫做==".interp"段("interp"是"interpreter"(解释器)的缩写)==。
+> ".interp"里面保持的就是一个字符串，这个字符串就是可执行文件所需要的动态链接器的路径。在Linux中，操作系统在对可执行文件==进行加载时==，会去寻址装载该可执行文件所需要相应的动态链接器，既".interp"段所指定的路径的共享对象。
+
+使用objdump工具查看"interp"内容：
+```c
+// test.c
+#include <stdio.h>
+
+int main() {
+  printf("hello world!\n");
+  return 0;
+}
+// gcc test.c -o test
+```
+```bash
+$> objdump -s test
+
+test:     file format elf64-x86-64
+
+Contents of section .interp:
+ 0318 2f6c6962 36342f6c 642d6c69 6e75782d  /lib64/ld-linux-
+  0328 7838362d 36342e73 6f2e3200           x86-64.so.2.
+```
+也可以使用readelf查看：
+```bash
+$> readelf -l test|grep .interpreter
+      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+```
+
+### 5.2 ".dynamic"段
+> [!important]
+> 动态链接ELF中最重要的结构".dynamic"段，这个段保存了动态链接所需要的基本信息，==比如依赖于那些共享对象、动态链接符号表的位置、动态链接重定位表的位置、共享对象初始化代码的地址等==。
+
+".dynamic"段的结构：
+```c
+/* Dynamic section entry.  */
+
+// 32位
+typedef struct {
+  Elf32_Sword   d_tag;                /* Dynamic entry type */
+  union {
+    Elf32_Word d_val;                 /* Integer value */
+    Elf32_Addr d_ptr;                 /* Address value */
+  } d_un;
+} Elf32_Dyn;
+
+// 64位
+typedef struct {
+  Elf64_Sxword  d_tag;                /* Dynamic entry type */
+  union {
+    Elf64_Xword d_val;                /* Integer value */
+    Elf64_Addr d_ptr;                 /* Address value */
+  } d_un;
+} Elf64_Dyn;
+```
+|d_tag类型|d_un的含义|
+|---|---|
+|DT_SYMTAB|动态链接符号表的地址，d_ptr表示".dynsym"的地址|
+|DT_STRTAB|动态链接字符串表地址，d_ptr表示".dynstr"的地址|
+|DT_STRSZ|动态链接字符串表大小，d_val表示大小|
+|DT_HASH|动态链接哈希表地址，d_ptr表示".hash"的地址|
+|DT_SONAME|本共享对象的"SO-NAME"|
+|DT_RPATH|动态链接共享对象搜索路径|
+|DT_INIT|初始化代码地址|
+|DT_FINIT|结束代码地址|
+|DT_NEED|依赖的共享对象文件，d_ptr表示所依赖的共享对象文件名|
+|DT_REL/DT_RELA|动态链接重定位表地址|
+|DT_RELENT/DT_RELAENT|动态重定位表入口函数|
+
+使用readelf工具查看".dynaminc"段的内容：
+```bash
+$> readelf -d test
+
+Dynamic section at offset 0x2dc8 contains 27 entries:
+  Tag        Type                         Name/Value
+  0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+  0x000000000000000c (INIT)               0x1000
+  0x000000000000000d (FINI)               0x1168
+  0x0000000000000019 (INIT_ARRAY)         0x3db8
+  0x000000000000001b (INIT_ARRAYSZ)       8 (bytes)
+  0x000000000000001a (FINI_ARRAY)         0x3dc0
+  0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)
+  0x000000006ffffef5 (GNU_HASH)           0x3b0
+  0x0000000000000005 (STRTAB)             0x480
+  0x0000000000000006 (SYMTAB)             0x3d8
+  0x000000000000000a (STRSZ)              141 (bytes)
+  0x000000000000000b (SYMENT)             24 (bytes)
+  0x0000000000000015 (DEBUG)              0x0
+  0x0000000000000003 (PLTGOT)             0x3fb8
+  0x0000000000000002 (PLTRELSZ)           24 (bytes)
+  0x0000000000000014 (PLTREL)             RELA
+  0x0000000000000017 (JMPREL)             0x610
+  0x0000000000000007 (RELA)               0x550
+  0x0000000000000008 (RELASZ)             192 (bytes)
+  0x0000000000000009 (RELAENT)            24 (bytes)
+  0x000000000000001e (FLAGS)              BIND_NOW
+  0x000000006ffffffb (FLAGS_1)            Flags: NOW PIE
+  0x000000006ffffffe (VERNEED)            0x520
+  0x000000006fffffff (VERNEEDNUM)         1
+  0x000000006ffffff0 (VERSYM)             0x50e
+  0x000000006ffffff9 (RELACOUNT)          3
+  0x0000000000000000 (NULL)               0x0
+```
+
+使用ldd查看一个程序主模块或一个共享库依赖于哪些共享库：
+```bash
+$> ldd test
+        linux-vdso.so.1 (0x00007ffe6d77b000)
+        libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f7967314000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f796754d000)
+```
+
+### 5.3 动态符号表
+```c
+// test.c
+#include <stdio.h>
+
+int main() {
+  printf("hello world!\n");
+  return 0;
+}
+//gcc test.c -o test
+```
+> [!note]
+> 为了完成动态链接，最关键的还是所依赖的符号和相关文件的信息。我们知道在静态链接中，有一个专门的段叫符号表".symtab"(symbol table)，里面保存了所有关于该目标文件的符号的定义和引用。动态链接的符号表示和静态链接十分相似。比如test程序依赖于libc.so.6，引用了里面的printf()函数。那么对于test来说，我们称test ==导入(import)== 了printf()函数，printf()是test的 ==导入函数(import function)== ；而libc.so.6它实际上是定义了printf()函数，并且提供给其它模块使用，我们称libc.so.6 ==导出(export)== 了printf()函数，printf()是libc.so.6的 ==导出函数(export function)== 。对比于这种导入导出函数，在静态链接中就相当于普通函数的定义和引用。
+> ELF中表示这种模块间符号导入导出的关系就叫做 ==动态符号表(Dynamic Symbol Table)==，对应的段名就是 ==".dynsym"(Dynamic Symbol)==。与".symbol"不同的是，".dynsym"只保存了与==动态链接相关的符号==，对于模块内部的符号，比如是私有变量则不保存。很多时候动态链接的模块同时拥有".dynsym"和".symtab"两个表，".symtab"中往往保存了所有符号，包括".dynsym"中的符号。
+> 和".symtab"类似，动态符号表也需要一些辅助表，比如用于保存符号名的字符串表。今天链接时叫做字符串表==".strtab"(string table)==，在这里就是==动态符号字符串表".dynstr"(Dynamic String Table)==；由于动态链接下，我们需要在程序运行时查找符号，为了加快符号的查找过程，往往还有辅助的==符号哈希表(".hash")==。
+
+使用readelf查看ELF文件的动态符号表以及哈希表：
+```c
+// lib.c
+#include <stdio.h>
+
+void foobar(int i) {
+  printf("Printing form lib.so %d\n", i);
+}
+// gcc -shared -fPIC lib.c -o lib.so
+```
+```bash
+$>  readelf -sD Lib.so
+
+Symbol table for image contains 7 entries:
+  Num:    Value          Size Type    Bind   Vis      Ndx Name
+    0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND
+    1: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_deregisterT[...]
+    2: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND [...]@GLIBC_2.2.5 (2)
+    3: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND __gmon_start__
+    4: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_registerTMC[...]
+    5: 0000000000000000     0 FUNC    WEAK   DEFAULT  UND [...]@GLIBC_2.2.5 (2)
+    6: 0000000000001119    43 FUNC    GLOBAL DEFAULT   14 foobar
+# .hash似乎已经不用了
+```
+
+### 5.4 动态链接重定位表
+**动态链接重定位相关结构**
+共享对象的重定位与静态链接的目标文件的重定位十分类似。唯一有区别的是目标文件的重定位是目标文件的重定位是在今天链接时完成，而共享对象的重定位则是在装载时完成的。在静态链接中，目标文件里面包含有专门由于表示重定位信息的重定位表，比如 ==".rel.text"== 表示代码段的重定位表，==".rel.data"== 是数据段的重定位表。
+动态链接的文件中，重定位表分别叫做".rel.dyn"和".rel.plt"，他们分别相当于".rel.text"和".rel.data"。 ==".rel.dyn"== 实际上是对数据引用的修正，它所修正的位置位于==".got"以及数据段==；而 ==".rel.plt"== 是对函数引用的修正，它所修正的位置位于 ==".got.plt"== 。
+
+使用readelf查看文件的重定位表：
+```bash
+$> readelf -r Lib.so
+
+Relocation section '.rela.dyn' at offset 0x468 contains 7 entries:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+  000000003e10  000000000008 R_X86_64_RELATIVE                    1110
+  000000003e18  000000000008 R_X86_64_RELATIVE                    10d0
+  000000004020  000000000008 R_X86_64_RELATIVE                    4020
+  000000003fe0  000100000006 R_X86_64_GLOB_DAT 0000000000000000 _ITM_deregisterTM[...] + 0
+  000000003fe8  000300000006 R_X86_64_GLOB_DAT 0000000000000000 __gmon_start__ + 0
+  000000003ff0  000400000006 R_X86_64_GLOB_DAT 0000000000000000 _ITM_registerTMCl[...] + 0
+  000000003ff8  000500000006 R_X86_64_GLOB_DAT 0000000000000000 __cxa_finalize@GLIBC_2.2.5 + 0
+
+  Relocation section '.rela.plt' at offset 0x510 contains 1 entry:
+    Offset          Info           Type           Sym. Value    Sym. Name + Addend
+    000000004018  000200000007 R_X86_64_JUMP_SLO 0000000000000000 printf@GLIBC_2.2.5 
+$> readelf -S Lib.so
+...
+  [22] .got              PROGBITS         0000000000003fe0  00002fe0
+       0000000000000020  0000000000000008  WA       0     0     8
+  [23] .got.plt          PROGBITS         0000000000004000  00003000
+       0000000000000020  0000000000000008  WA       0     0     8
+  [24] .data             PROGBITS         0000000000004020  00003020
+       0000000000000008  0000000000000000  WA       0     0     8
+...
+```
+
+- R_X86_64_JUMP_SLO(对.got.plt的重定位)
+  被修正的位置只需要填入符号的地址即可。例如printf这个重定位入口，它的类型为R_X86_64_JUMP_SLO，它的偏移为0x000000004018，它实际上位于".got.plt"中，前三项被系统占据，从第四项开始存放导入函数的地方。0x0000000000004000 + 8 * 3 = 000000004018。
+  1. 第一项保存的是".dynamic"段的地址。
+  2. 第二项保存的是本模块的ID。
+  3. 第三项保存的是_dl_runtime_resolve()的地址。
+  当动态链接器需要进行重定位时，先查找"printf"的地址，"printf"位于libc.so.6中。假设链接器在全局符号表里面找到"printf"的地址为0x000008801234，那么链接器就会将这个地址填入到".got.plt"中的偏移为0x000000004018位置中去，从而实现了地址的重定位，既实现了动态链接最关键的一步。
+
+- R_X86_64_GLOB_DAT(对.got的重定位)
+  和R_X86_64_JUMP_SLO一模一样。
+
 ## 6. 动态链接的步骤和实现
 ## 7. HOOK
