@@ -619,30 +619,28 @@ $> ldd test
 
 ### 5.3 动态符号表
 ```c
-// test.c
-#include <stdio.h>
-
-int main() {
-  printf("hello world!\n");
-  return 0;
-}
-//gcc test.c -o test
-```
-> [!note]
-> 为了完成动态链接，最关键的还是所依赖的符号和相关文件的信息。我们知道在静态链接中，有一个专门的段叫符号表".symtab"(symbol table)，里面保存了所有关于该目标文件的符号的定义和引用。动态链接的符号表示和静态链接十分相似。比如test程序依赖于libc.so.6，引用了里面的printf()函数。那么对于test来说，我们称test ==导入(import)== 了printf()函数，printf()是test的 ==导入函数(import function)== ；而libc.so.6它实际上是定义了printf()函数，并且提供给其它模块使用，我们称libc.so.6 ==导出(export)== 了printf()函数，printf()是libc.so.6的 ==导出函数(export function)== 。对比于这种导入导出函数，在静态链接中就相当于普通函数的定义和引用。
-> ELF中表示这种模块间符号导入导出的关系就叫做 ==动态符号表(Dynamic Symbol Table)==，对应的段名就是 ==".dynsym"(Dynamic Symbol)==。与".symbol"不同的是，".dynsym"只保存了与==动态链接相关的符号==，对于模块内部的符号，比如是私有变量则不保存。很多时候动态链接的模块同时拥有".dynsym"和".symtab"两个表，".symtab"中往往保存了所有符号，包括".dynsym"中的符号。
-> 和".symtab"类似，动态符号表也需要一些辅助表，比如用于保存符号名的字符串表。今天链接时叫做字符串表==".strtab"(string table)==，在这里就是==动态符号字符串表".dynstr"(Dynamic String Table)==；由于动态链接下，我们需要在程序运行时查找符号，为了加快符号的查找过程，往往还有辅助的==符号哈希表(".hash")==。
-
-使用readelf查看ELF文件的动态符号表以及哈希表：
-```c
 // lib.c
 #include <stdio.h>
 
 void foobar(int i) {
   printf("Printing form lib.so %d\n", i);
 }
-// gcc -shared -fPIC lib.c -o lib.so
+// gcc -shared -fPIC lib.c -o Lib.so
+
+// Program1.c
+#include "Lib.h"
+
+int main() {
+  foobar(1);
+  return 0;
+}
 ```
+> [!note]
+> 为了完成动态链接，最关键的还是所依赖的符号和相关文件的信息。我们知道在静态链接中，有一个专门的段叫符号表".symtab"(symbol table)，里面保存了所有关于该目标文件的符号的定义和引用。动态链接的符号表示和静态链接十分相似。比如Program1程序依赖于Lib.so，引用了里面的printf()函数。那么对于Program1来说，我们称Program1 ==导入(import)== 了foobar()函数，foobar()是Program1的 ==导入函数(import function)== ；而Lib.so它实际上是定义了foobar()函数，并且提供给其它模块使用，我们称Lib.so ==导出(export)== 了foobar()函数，foobar()是Lib.so的 ==导出函数(export function)== 。对比于这种导入导出函数，在静态链接中就相当于普通函数的定义和引用。
+> ELF中表示这种模块间符号导入导出的关系就叫做 ==动态符号表(Dynamic Symbol Table)==，对应的段名就是 ==".dynsym"(Dynamic Symbol)==。与".symbol"不同的是，".dynsym"只保存了与==动态链接相关的符号==，对于模块内部的符号，比如是私有变量则不保存。很多时候动态链接的模块同时拥有".dynsym"和".symtab"两个表，".symtab"中往往保存了所有符号，包括".dynsym"中的符号。
+> 和".symtab"类似，动态符号表也需要一些辅助表，比如用于保存符号名的字符串表。今天链接时叫做字符串表==".strtab"(string table)==，在这里就是==动态符号字符串表".dynstr"(Dynamic String Table)==；由于动态链接下，我们需要在程序运行时查找符号，为了加快符号的查找过程，往往还有辅助的==符号哈希表(".hash")==。
+
+使用readelf查看ELF文件的动态符号表以及哈希表：
 ```bash
 $>  readelf -sD Lib.so
 
@@ -661,7 +659,7 @@ Symbol table for image contains 7 entries:
 ### 5.4 动态链接重定位表
 **动态链接重定位相关结构**
 共享对象的重定位与静态链接的目标文件的重定位十分类似。唯一有区别的是目标文件的重定位是目标文件的重定位是在今天链接时完成，而共享对象的重定位则是在装载时完成的。在静态链接中，目标文件里面包含有专门由于表示重定位信息的重定位表，比如 ==".rel.text"== 表示代码段的重定位表，==".rel.data"== 是数据段的重定位表。
-动态链接的文件中，重定位表分别叫做".rel.dyn"和".rel.plt"，他们分别相当于".rel.text"和".rel.data"。 ==".rel.dyn"== 实际上是对数据引用的修正，它所修正的位置位于==".got"以及数据段==；而 ==".rel.plt"== 是对函数引用的修正，它所修正的位置位于 ==".got.plt"== 。
+动态链接的文件中，重定位表分别叫做".rel.dyn"和".rel.plt"，他们分别相当于".rel.text"和".rel.data"。 ==".rel.dyn"== 实际上是对数据引用的修正，它所修正的位置位于 ==".got"以及数据段== ；而 ==".rel.plt"== 是对函数引用的修正，它所修正的位置位于 ==".got.plt"== 。
 
 使用readelf查看文件的重定位表：
 ```bash
@@ -697,9 +695,58 @@ $> readelf -S Lib.so
   2. 第二项保存的是本模块的ID。
   3. 第三项保存的是_dl_runtime_resolve()的地址。
   当动态链接器需要进行重定位时，先查找"printf"的地址，"printf"位于libc.so.6中。假设链接器在全局符号表里面找到"printf"的地址为0x000008801234，那么链接器就会将这个地址填入到".got.plt"中的偏移为0x000000004018位置中去，从而实现了地址的重定位，既实现了动态链接最关键的一步。
-
 - R_X86_64_GLOB_DAT(对.got的重定位)
   和R_X86_64_JUMP_SLO一模一样。
+- R_X86_64_RELATIVE，这种类型的重定位实际上就是==基址重置(Rebasing)==。共享对象的数据段没有办法做到地址无关的，它可能会包含绝对地址引用，对于这种绝对地址的引用，我们必须在装载时将其重定位。例如：
+  ```c
+  static int a;
+  static int *p = &a;
+  ```
+  在编译时，共享对象的地址是从0开始的，我们假设该静态变量a相对于起始地址0的偏移为B，即p值为B。一旦共享对象被装载到地址A，那么实际上该变量a的地址为A+B，即p的值需要加上一个装载地址A。R_X86_64_RELATIVE类型的重定位入口就是专门用来重定位指针变量p这种类型的，变量p在装载时需要加上一个装载地址A，才是正确的结果。
+
+### 5.5 动态链接时进程堆栈初始化信息
+> [!note]
+> 站在动态链接器的角度看，当操作系统将控制权交给它时，它将开始做链接工作，那么至少它需要知道关于可执行文件和本进程的些信息，比如可执行文件有几个段("Segment")、每个段的属性、程序的入口地址等。这些信息往往由操作系统传递给动态链接器，保存在进程的堆栈里面。进程初始化时，堆栈里面保存了关于进程执行环境和命令行参数等信息。事实上，堆栈里面还保存了动态链接器所需要的一些==辅助信息数组(Auxiliary Vector)==。
+
+辅助信息结构：
+```c
+// /usr/include/elf.h
+/* Auxiliary vector.  */
+
+/* This vector is normally only used by the program interpreter.  The
+   usual definition in an ABI supplement uses the name auxv_t.  The
+   vector is not usually defined in a standard <elf.h> file, but it
+   can't hurt.  We rename it to avoid conflicts.  The sizes of these
+   types are an arrangement between the exec server and the program
+   interpreter, so we don't fully specify them here.  */
+
+typedef struct
+{
+  uint32_t a_type;              /* Entry type */
+  union
+    {
+      uint32_t a_val;           /* Integer value */
+      /* We use to have pointer elements added here.  We cannot do that,
+         though, since it does not work when using 32-bit definitions
+         on 64-bit platforms and vice versa.  */
+    } a_un;
+} Elf32_auxv_t;
+
+typedef struct
+{
+  uint64_t a_type;              /* Entry type */
+  union
+    {
+      uint64_t a_val;           /* Integer value */
+      /* We use to have pointer elements added here.  We cannot do that,
+         though, since it does not work when using 32-bit definitions
+         on 64-bit platforms and vice versa.  */
+    } a_un;
+} Elf64_auxv_t;
+```
+
+![](/image/linker/chapter05/辅助信息1.png)
+![](/image/linker/chapter05/辅助信息2.png)
 
 ## 6. 动态链接的步骤和实现
 ## 7. HOOK
