@@ -990,8 +990,8 @@ void __wrap_free(void *ptr) {
 ```bash
 $> gcc -DLINKTIME -c link_malloc.c
 $> gcc -c int.c
-$> gcc -Wl,--wrap,malloc -Wl,--wrap,free -o int1 int.o link_malloc.o
-$> ./int1
+$> gcc -Wl,--wrap,malloc -Wl,--wrap,free -o intl int.o link_malloc.o
+$> ./intl
 malloc(32) = 0x5590c014a2a0
 free(0x5590c014a2a0)
 ```
