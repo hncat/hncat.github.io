@@ -574,7 +574,7 @@ typedef struct {
 |DT_REL/DT_RELA|动态链接重定位表地址|
 |DT_RELENT/DT_RELAENT|动态重定位表入口函数|
 
-使用readelf工具查看".dynaminc"段的内容：
+使用readelf工具查看".dynamic"段的内容：
 ```bash
 $> readelf -d test
 
@@ -749,4 +749,302 @@ typedef struct
 ![](/image/linker/chapter05/辅助信息2.png)
 
 ## 6. 动态链接的步骤和实现
-## 7. HOOK
+动态链接的步骤：
+  1. 启动动态链接器本身
+  2. 装载所有需要的共享对象
+  3. 重定位和初始化
+
+### 6.1 动态链接器自举
+> [!note]
+> 1. 动态链接器本身也是一个共享对象。
+> 2. 对于普通共享对象文件来说，它的重定位工作由动态链接器来完成；它也可以依赖于其它共享对象，其中的被依赖的共享对象有动态链接器负责链接和装载。
+> 3. 对于动态链接器本身？首先动态链接器本身不可以依赖于其它任何共享对象，其次动态链接器本身所需要的全局和静态变量的重定位工作由本身完成。对于第一个条件我们可以人物的控制，在编写动态链接器时保证不使用任何系统库、运行库；对于第二个条件，动态链接器必须在启动时有一段非常精巧的代码可以完成这项艰巨的工作而同时又不能使用全局和静态变量。这种具有一定限制条件的启动代码往往被称为==自举（Bootstrap）==。
+
+动态链接器入口地址即是自举代码入口，当操作系统将进程控制权交给动态链接器时，动态链接器的自举代码开始执行。自举代码首先会找到它自己的GOT。而GOT的第一个入口保存的是".dynamic"段的偏移地址，由此找到了动态链接器本身的".dynamic"段。通过".dynamic"中的信息，自举代码便可以或得动态链接器本身的重定位表和符号表等，从而得到动态链接器本身的重定位入口，先将它们全部重定位。从这一步开始，动态链接器代码中才可以开始使用自己的全局变量和静态变量。
+
+实际上动态链接器的自举代码中，除了不可以使用全局变量和静态变量之外，甚至不能调用函数，既动态链接器本身的函数也不能调用。
+
+### 6.2 装载共享对象
+> [!note]
+> 完成自举后，动态链接器将可执行文件和链接器本身的符号表都合并到一个符号表中，我们称为==全局符号表（Global Symbol Table）==。然后链接器开始寻址可执行文件所依赖的共享对象，==在".dynamic"段中，有一种类型的入口是DT_NEEDED，它所指出的是可执行文件（或共享对象）所依赖的共享对象==。由此，链接器可以列出可执行文件所需的所有共享对象并将这些共享对象的名字放入到一个==装载集合中==。然后链接器开始从集合中取一个所需的共享对象的名字，==找到相应的文件后打开该文件，读取相应的ELF文件头和".dynamic"段，然后将它相应的代码段和数据段映射到进程空间中==。如果这个ELF共享对象还依赖于其它共享对象，那么将所依赖的共享对象的名字放到装载集合中。如此循环直到所有依赖的共享对象都被装载完成。链接器的装载会有不同的顺序，可能会使用深度优先或者广度优先或者其它的顺序来遍历整个链接，这取决于链接器，但是一般比较常见的算法是广度优先。
+> 当一个新的共享对象被装载完成时，它的符号表会被合并到全局符号表中，所以当所有的共享对象被装载进来时，全局符号表里将包含进程中所有的动态链接所需的符号。
+
+**符号的优先级**
+```c
+// a1.c
+#include <stdio.h>
+
+void a() {
+  printf("a1.c\n");
+}
+
+// a2.c
+#include <stdio.h>
+
+void a() {
+  printf("a2.c\n");
+}
+
+// b1.c
+void a();
+
+void b1() {
+  a();
+}
+
+// b2.c
+void a();
+void b2() {
+  a();
+}
+```
+
+假设b1.c依赖于a1.c，b2.c依赖于a2.c:
+```bash
+$> gcc -fPIC -shared a1.c -o a1.so
+$> gcc -fPIC -shared a2.c -o a2.so
+$> gcc -fPIC -shared b1.c ./a1.so -o b1.so
+$> gcc -fPIC -shared b2.c ./a2.so -o b2.so
+$> ldd b1.so
+        linux-vdso.so.1 (0x00007ffd801db000)
+        ./a1.so (0x00007f0682435000)
+        libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f0682203000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f0682441000)
+$> ldd b2.so
+        linux-vdso.so.1 (0x00007ffc144a5000)
+        ./a2.so (0x00007f83a7b6f000)
+        libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f83a793d000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f83a7b7b000)
+```
+
+假设有程序同时使用b1.c中的函数b1和b2.c中的函数b2
+```c
+// main.c
+#include <stdio.h>
+void b1();
+void b2();
+
+int main() {
+  b1();
+  b2();
+  return 0;
+}
+```
+
+```bash
+$> gcc main.c b1.so b2.so -o main -Xlinker -rpath ./
+$> ./main
+a1.c
+a1.c
+```
+
+> [!note]
+> "-Xlinker -rpath ./"表示链接器在当前路径寻址共享对象，否则链接器会报无法找到a1.so和a2.so的错误。
+
+查看进程的映射信息:
+```bash
+$> cat /proc/102949/maps
+55908b687000-55908b688000 r--p 00000000 fc:03 1085761                    /home/far/worker/linker/chapter05/main
+55908b688000-55908b689000 r-xp 00001000 fc:03 1085761                    /home/far/worker/linker/chapter05/main
+55908b689000-55908b68a000 r--p 00002000 fc:03 1085761                    /home/far/worker/linker/chapter05/main
+55908b68a000-55908b68b000 r--p 00002000 fc:03 1085761                    /home/far/worker/linker/chapter05/main
+55908b68b000-55908b68c000 rw-p 00003000 fc:03 1085761                    /home/far/worker/linker/chapter05/main
+55908c862000-55908c883000 rw-p 00000000 00:00 0                          [heap]
+7ff5b68b2000-7ff5b68b4000 rw-p 00000000 00:00 0
+7ff5b68b4000-7ff5b68b5000 r--p 00000000 fc:03 1086585                    /home/far/worker/linker/chapter05/a2.so
+7ff5b68b5000-7ff5b68b6000 r-xp 00001000 fc:03 1086585                    /home/far/worker/linker/chapter05/a2.so
+7ff5b68b6000-7ff5b68b7000 r--p 00002000 fc:03 1086585                    /home/far/worker/linker/chapter05/a2.so
+7ff5b68b7000-7ff5b68b8000 r--p 00002000 fc:03 1086585                    /home/far/worker/linker/chapter05/a2.so
+7ff5b68b8000-7ff5b68b9000 rw-p 00003000 fc:03 1086585                    /home/far/worker/linker/chapter05/a2.so
+7ff5b68b9000-7ff5b68ba000 r--p 00000000 fc:03 1086583                    /home/far/worker/linker/chapter05/a1.so
+7ff5b68ba000-7ff5b68bb000 r-xp 00001000 fc:03 1086583                    /home/far/worker/linker/chapter05/a1.so
+7ff5b68bb000-7ff5b68bc000 r--p 00002000 fc:03 1086583                    /home/far/worker/linker/chapter05/a1.so
+7ff5b68bc000-7ff5b68bd000 r--p 00002000 fc:03 1086583                    /home/far/worker/linker/chapter05/a1.so
+7ff5b68bd000-7ff5b68be000 rw-p 00003000 fc:03 1086583                    /home/far/worker/linker/chapter05/a1.so
+7ff5b68be000-7ff5b68e6000 r--p 00000000 fc:03 2774                       /usr/lib/x86_64-linux-gnu/libc.so.6
+7ff5b68e6000-7ff5b6a7b000 r-xp 00028000 fc:03 2774                       /usr/lib/x86_64-linux-gnu/libc.so.6
+7ff5b6a7b000-7ff5b6ad3000 r--p 001bd000 fc:03 2774                       /usr/lib/x86_64-linux-gnu/libc.so.6
+7ff5b6ad3000-7ff5b6ad4000 ---p 00215000 fc:03 2774                       /usr/lib/x86_64-linux-gnu/libc.so.6
+7ff5b6ad4000-7ff5b6ad8000 r--p 00215000 fc:03 2774                       /usr/lib/x86_64-linux-gnu/libc.so.6
+7ff5b6ad8000-7ff5b6ada000 rw-p 00219000 fc:03 2774                       /usr/lib/x86_64-linux-gnu/libc.so.6
+7ff5b6ada000-7ff5b6ae7000 rw-p 00000000 00:00 0
+7ff5b6af0000-7ff5b6af1000 r--p 00000000 fc:03 1085852                    /home/far/worker/linker/chapter05/b2.so
+7ff5b6af1000-7ff5b6af2000 r-xp 00001000 fc:03 1085852                    /home/far/worker/linker/chapter05/b2.so
+7ff5b6af2000-7ff5b6af3000 r--p 00002000 fc:03 1085852                    /home/far/worker/linker/chapter05/b2.so
+7ff5b6af3000-7ff5b6af4000 r--p 00002000 fc:03 1085852                    /home/far/worker/linker/chapter05/b2.so
+7ff5b6af4000-7ff5b6af5000 rw-p 00003000 fc:03 1085852                    /home/far/worker/linker/chapter05/b2.so
+7ff5b6af5000-7ff5b6af6000 r--p 00000000 fc:03 1086586                    /home/far/worker/linker/chapter05/b1.so
+7ff5b6af6000-7ff5b6af7000 r-xp 00001000 fc:03 1086586                    /home/far/worker/linker/chapter05/b1.so
+7ff5b6af7000-7ff5b6af8000 r--p 00002000 fc:03 1086586                    /home/far/worker/linker/chapter05/b1.so
+7ff5b6af8000-7ff5b6af9000 r--p 00002000 fc:03 1086586                    /home/far/worker/linker/chapter05/b1.so
+7ff5b6af9000-7ff5b6afa000 rw-p 00003000 fc:03 1086586                    /home/far/worker/linker/chapter05/b1.so
+7ff5b6afa000-7ff5b6afc000 rw-p 00000000 00:00 0
+7ff5b6afc000-7ff5b6afe000 r--p 00000000 fc:03 1173                       /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ff5b6afe000-7ff5b6b28000 r-xp 00002000 fc:03 1173                       /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ff5b6b28000-7ff5b6b33000 r--p 0002c000 fc:03 1173                       /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ff5b6b34000-7ff5b6b36000 r--p 00037000 fc:03 1173                       /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ff5b6b36000-7ff5b6b38000 rw-p 00039000 fc:03 1173                       /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ffc40a9c000-7ffc40abd000 rw-p 00000000 00:00 0                          [stack]
+7ffc40b0f000-7ffc40b13000 r--p 00000000 00:00 0                          [vvar]
+7ffc40b13000-7ffc40b15000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
+```
+观察到4个共享对象a1.so、a2.so、b1.so以及b2.so都被装载进来了，那a1.so的函数a和a2.so的函数a是不是冲突了？为什么main的输出结果是两个a1.c呢？也就是说a2.so中的函数a似乎被忽略了。这种一个共享对象里面的全局符号被另一个共享对象的同名全局符号覆盖的现象又被称为==共享对象全局符号介入（Global Symbol Interpose）==。
+
+> [!note]
+> Linux下的动态链接器时这样处理全局符号介入的：当一个符号需要被加入全局符号表时，如果相同的符号名已经存在，则后加入的符号忽略。
+> 这一点已经说明了为什么 会打印出两个a1.c的原因装载的顺序应该是(对于广度优先b1.so、b2.so、a1.so和a2.so，对于深度优先：b1.so、a1.so、b2.so和a2.so)因此a2.so的同名符号一定会被忽略。
+
+> [!important]
+> 同样因为全局符号介入的问题，导致为什么模块内部调用非"static"函数时为什么也要使用地址无关代码，而不是使用相对地址调用的原因。因为一旦出现全局符号介入就需要修改其调用地址。
+
+### 6.3 重定位和初始化
+当上面的步骤完成后，链接器开始重新遍历可执行文件和每个共享对象的重定位表，将它们的GOT/PLT中的每个需要重定位的位置进行修正。
+
+重定位完成后，如果某个共享对象有".init"段，那么动态链接器会执行".init"段中的代码，用以实现共享对象特有的初始化过程，比如共享对象中的c++的全局/静态对象的构造就需要通过".init"来初始化。相应的，共享库中还可能有".finit"段，当进程退出时会执行".finit"段中的代码，比如用来实现c++全局对象析构之类的操作。
+
+对于可执行文件而言".init"段和".finit"段是由程序初始化部分代码负责执行的。
+
+当完成了重定位和初始化后，所有的准备工作就宣告完成了，所需要的共享对象也都已经装载并且链接完成，这时动态链接器将进程的控制权交给程序的入口并且开始执行。
+
+## 7. 库打桩机制(HOOK)
+Linux链接器支持一种强大的技术，它允许你劫持对共享库函数的调用，取而代之执行自己的代码。
+
+以对libc库的malloc和free为例:
+```c
+// mymalloc.c
+#ifdef COMPILETIME
+#include <malloc.h>
+#include <stdio.h>
+
+void *mymalloc(size_t size) {
+  void *ptr = malloc(size);
+  printf("malloc(%d)=%p\n", (int)size, ptr);
+  return ptr;
+}
+
+void myfree(void *ptr) {
+  free(ptr);
+  printf("free(%p)\n", ptr);
+}
+
+#endif
+
+// malloc.h
+#ifndef __MALLOC_H__
+#define __MALLOC_H__
+
+#include <stdlib.h>
+
+#define malloc(size) mymalloc(size)
+#define free(ptr) myfree(ptr)
+
+void *mymalloc(size_t size);
+void free(void *ptr);
+
+#endif
+
+//int.c
+#include <malloc.h>
+#include <stdio.h>
+
+int main() {
+  int *p = malloc(32);
+  free(p);
+  return 0;
+}
+```
+
+### 7.1 编译时打桩
+```bash
+$> gcc -DCOMPILETIME -c mymalloc.c
+$> gcc -I. -o intc int.c mymalloc.o
+$> ./intc
+malloc(32)=0x560a72b382a0
+free(0x560a72b382a0)
+```
+从结果上看，使用了我们自定义的malloc和free函数。其主要原因是因为我们在编译可执行程序时使用了-I .，这个选项会告诉c的预处理器在搜索系统目录前，先在当前目录中查找malloc.h。需要注意的是mymalloc.h中的包装函数使用的标志malloc.h头文件编译的。
+
+### 7.2 链接时打桩
+对mymalloc.c文件进行修改得到如下源码：
+```c
+// link_malloc.c
+#ifdef LINKTIME
+#include <stdio.h>
+
+void *__real_malloc(size_t size);
+void __real_free(void *ptr);
+
+void *__wrap_malloc(size_t size) {
+  void *ptr = __real_malloc(size);
+  printf("malloc(%d) = %p\n", (int)size, ptr);
+  return ptr;
+}
+
+void __wrap_free(void *ptr) {
+  __real_free(ptr);
+  printf("free(%p)\n", ptr);
+}
+#endif
+```
+```bash
+$> gcc -DLINKTIME -c link_malloc.c
+$> gcc -c int.c
+$> gcc -Wl,--wrap,malloc -Wl,--wrap,free -o int1 int.o link_malloc.o
+$> ./int1
+malloc(32) = 0x5590c014a2a0
+free(0x5590c014a2a0)
+```
+> [!important]
+> Linux静态链接器支持用--wrap f标志进行链时打桩。这个标志告诉链接器，把对符号f的引用解析成__wrap_f，还要对符号__real_f的引用解析位f。
+> -Wl, option选项表示把option传递给链接器。option中的每个逗号都要替换为一个空格。所以-Wl,--wrap,malloc就把--wrap malloc传递给链接器，-Wl,--wrap,free也类似。
+
+### 7.3 运行时打桩
+```c
+// run_malloc.c
+#ifdef RUNTIME
+
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+void *malloc(size_t size) {
+  void *(*mallocp)(size_t);
+  char *error;
+  mallocp = dlsym(RTLD_NEXT, "malloc");
+  if ((error = dlerror()) != NULL) {
+    fputs(error, stderr);
+    exit(1);
+  }
+  void *ptr = mallocp(size);
+  char buffer[256] = {0};
+  snprintf(buffer, sizeof(buffer), "malloc(%d) = %p\n", (int)size, ptr);
+  write(STDERR_FILENO, buffer, sizeof(buffer));
+  return ptr;
+}
+
+void free(void *ptr) {
+  void (*freep)(void *);
+  char *error;
+  freep = dlsym(RTLD_NEXT, "free");
+  if ((error = dlerror()) != NULL) {
+    fputs(error, stderr);
+    exit(1);
+  }
+  freep(ptr);
+  char buffer[256] = {0};
+  snprintf(buffer, sizeof(buffer), "free(%p)\n", ptr);
+  write(STDERR_FILENO, buffer, sizeof(buffer));
+}
+
+#endif
+```
+```bash
+$> gcc -shared -fPIC -DRUNTIME run_malloc.c -o run_malloc.so -ldl
+$> gcc -o intr int.c ./run_malloc.so
+$> ./intr
+malloc(32) = 0x563142b312a0
+free(0x563142b312a0
+```
