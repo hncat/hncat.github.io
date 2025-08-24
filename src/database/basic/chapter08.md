@@ -81,9 +81,10 @@ select prod_id, quantity, item_price from orderitems where order_num = 20005;
 +---------+----------+------------+
 4 rows in set (0.04 sec)
 
-# item_price列包含订单中每项物品的单价。如下汇总物品的价格（单价乘以订购数量）：
-select prod_id, quantity, item_price, quantity * item_price as expanded_price from orderitems where order_num =
- 20005;
+-- item_price列包含订单中每项物品的单价。如下汇总物品的价格（单价乘以订购数量）：
+select prod_id, quantity, item_price, quantity * item_price as expanded_price
+from orderitems
+where order_num = 20005;
 +---------+----------+------------+----------------+
 | prod_id | quantity | item_price | expanded_price |
 +---------+----------+------------+----------------+
