@@ -25,6 +25,20 @@ export default sidebar({
         children: "structure"
       }],
     },
+    {
+      text: "数据库",
+      icon: "database",
+      prefix: "database/",
+      link: "database/",
+      children: [{
+        text: "mysql基础",
+        icon: "database",
+        prefix: "basic/",
+        link: "basic/",
+        collapsible: true,
+        children: "structure"
+      }],
+    },
     "intro",
   ],
 });

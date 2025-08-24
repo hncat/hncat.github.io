@@ -1,7 +1,7 @@
 ---
 title: 链接、装载和库
 index: false
-icon: laptop-code
+icon: link
 tags:
     - 计算机基础
     - c/c++
