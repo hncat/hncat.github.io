@@ -1,9 +1,10 @@
+-- Active: 1746874225725@@127.0.0.1@3306@crashcourse
 ########################################
 # MySQL Crash Course
 # http://www.forta.com/books/0672327120/
 # Example table population scripts
 ########################################
-
+USE crashcourse;
 
 ##########################
 # Populate customers table
@@ -207,3 +208,16 @@ BEGIN
     SELECT total INTO ototal;
   END;
 END;
+
+CREATE TABLE ordertotals(
+  ordertotals INT AUTO_INCREMENT PRIMARY KEY
+) ENGINE=InnoDB;
+
+SELECT * FROM ordertotals;
+START TRANSACTION;
+DELETE FROM ordertotals;
+SELECT * FROM ordertotals;
+ROLLBACK;
+SELECT * FROM ordertotals;
+
+SAVEPOINT delete1;
