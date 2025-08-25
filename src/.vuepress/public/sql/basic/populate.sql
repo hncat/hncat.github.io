@@ -180,3 +180,30 @@ VALUES(114, 'SAFE', '2005-09-07',
 'Call from individual trapped in safe plummeting to the ground, suggests an escape hatch be added.
 Comment forwarded to vendor.'
 );
+
+CREATE PROCEDURE ordertotal(
+  IN onumber INT,
+  IN taxable BOOLEAN,
+  OUT ototal DECIMAL(8, 2)
+) COMMENT 'Obtain order total, optionally adding tax'
+BEGIN
+  -- Declare variable for total
+  DECLARE total DECIMAL(8, 2);
+  -- Declare tax percentage
+  DECLARE taxrate INT DEFAULT 6;
+
+  -- Get the order total
+  SELECT SUM(item_price * quantity)
+  FROM orderitems
+  WHERE order_num = onumber
+  INTO total;
+
+  -- Is this taxable?
+  IF taxable THEN
+    -- Yes, so add taxrate to the total
+    SELECT total + (total/100*taxrate) INTO total;
+  END IF;
+    -- And finally, save to out variable
+    SELECT total INTO ototal;
+  END;
+END;
