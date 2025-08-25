@@ -1,5 +1,5 @@
 ---
-title: MySQL数据类型
+title: 前言
 date: 2025-08-25
 tags:
     - 计算机基础
@@ -50,3 +50,7 @@ dir:
 |MEDIUMBLOB|Blob最大长度为16MB|
 |LONGBLOB|Blob最大长度为4GB|
 |TINYBLOB|Blob最大长度为255字节|
+
+## 5. 用到的sql脚本
+[create.sql](/sql/basic/create.sql)
+[populate.sql](/sql/basic/populate.sql)

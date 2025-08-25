@@ -104,7 +104,3 @@ DESCRIBE customers; -- 和使用 show columns form <表名>一个效果
 > SHOW GRANTS: 用来显示授予用户的安全权限
 > SHOW ERRORS和SHOW WARNINGS: 用来显示服务器错误或警告消息
 > 使用HELP SHOW: 显示SHOW语句
-
-## 1.4 用到的数据
-[create.sql](/sql/basic/create.sql)
-[populate.sql](/sql/basic/populate.sql)
