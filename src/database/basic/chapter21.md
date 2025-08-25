@@ -146,7 +146,7 @@ SELECT @total;
 ### 21.3.5 建立智能存储过程
 > [!important]
 > 用DECLARE语句定义了两个局部变量。DECLARE要求指定变量名和数据类型，它也支持可选的默认值。
-> 
+
 ```sql
 CREATE PROCEDURE ordertotal(
   IN onumber INT,
