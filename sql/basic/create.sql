@@ -3,6 +3,7 @@
 # http://www.forta.com/books/0672327120/
 # Example table creation scripts
 ########################################
+USE crashcourse;
 
 ########################
 # Create customers table
