@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 20
+order: 21
 dir:
-    order: 20
+    order: 21
 ---
 ## 20.1 视图
 > [!important]

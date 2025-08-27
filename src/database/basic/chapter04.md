@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 4
+order: 5
 dir:
-    order: 4
+    order: 5
 ---
 ## 4.1 使用where子句
 ```sql

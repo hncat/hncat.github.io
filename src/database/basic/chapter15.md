@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 15
+order: 16
 dir:
-    order: 15
+    order: 16
 ---
 ## 15.1 组合查询
 > [!note]

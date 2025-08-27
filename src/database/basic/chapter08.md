@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 8
+order: 9
 dir:
-    order: 8
+    order: 9
 ---
 ## 8.1 拼接字段
 > [!note]

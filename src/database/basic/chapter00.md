@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 0
+order: 1
 dir:
-    order: 0
+    order: 1
 ---
 ## 1. 串数据类型
 |数据类型|说明|
@@ -54,3 +54,6 @@ dir:
 ## 5. 用到的sql脚本
 [create.sql](/sql/basic/create.sql)
 [populate.sql](/sql/basic/populate.sql)
+
+## 6. 电子书籍
+[MySQL必知必会](/sql/MySQL必知必会.pdf)

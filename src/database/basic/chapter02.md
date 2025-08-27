@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 2
+order: 3
 dir:
-    order: 2
+    order: 3
 ---
 ## 2.1 查询单个列
 ```sql

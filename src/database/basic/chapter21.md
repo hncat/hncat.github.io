@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 21
+order: 22
 dir:
-    order: 21
+    order: 22
 ---
 ## 21.1 说明是存储过程
 > [!note]

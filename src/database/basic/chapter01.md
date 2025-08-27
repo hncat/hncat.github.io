@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 1
+order: 2
 dir:
-    order: 1
+    order: 2
 ---
 ## 1.1 连接
 ### mysql的选项和参数

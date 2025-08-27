@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 13
+order: 14
 dir:
-    order: 13
+    order: 14
 ---
 ## 13.1 联结
 ### 13.1.1 关系表

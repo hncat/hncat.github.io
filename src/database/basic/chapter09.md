@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 9
+order: 10
 dir:
-    order: 9
+    order: 10
 ---
 ## 9.1 使用函数
 ### 9.1.1 文本处理函数

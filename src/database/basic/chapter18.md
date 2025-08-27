@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 18
+order: 19
 dir:
-    order: 18
+    order: 19
 ---
 ## 18.1 更新数据
 为了更新（修改）表中的数据，可使用UPDATE语句。可采用两种方式使用UPDATE：

@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 24
+order: 25
 dir:
-    order: 24
+    order: 25
 ---
 ## 24.1 事务处理
 > [!important]

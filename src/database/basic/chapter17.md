@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 17
+order: 18
 dir:
-    order: 17
+    order: 18
 ---
 ## 17.1 数据插入(INSERT)
 > [!important]

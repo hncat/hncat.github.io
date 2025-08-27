@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 10
+order: 11
 dir:
-    order: 10
+    order: 11
 ---
 ## 10.1 聚集函数
 |函数|说明|

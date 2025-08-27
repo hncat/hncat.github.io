@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 11
+order: 12
 dir:
-    order: 11
+    order: 12
 ---
 ## 11.1 数据分组
 ```sql

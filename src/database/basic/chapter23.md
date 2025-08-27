@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 23
+order: 24
 dir:
-    order: 23
+    order: 24
 ---
 ## 23.1 触发器
 > [!important]

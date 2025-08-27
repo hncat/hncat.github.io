@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 5
+order: 6
 dir:
-    order: 5
+    order: 6
 ---
 ## 5.1 组合where语句
 ### 5.1.1 and操作符

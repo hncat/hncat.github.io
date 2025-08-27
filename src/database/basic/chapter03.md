@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 3
+order: 4
 dir:
-    order: 3
+    order: 4
 ---
 ## 3.1 排序数据
 ```sql

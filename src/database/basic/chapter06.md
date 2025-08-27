@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 6
+order: 7
 dir:
-    order: 6
+    order: 7
 ---
 ## 6.1 like操作符
 > [!tip]

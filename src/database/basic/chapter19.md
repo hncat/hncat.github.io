@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 19
+order: 20
 dir:
-    order: 19
+    order: 20
 ---
 ## 19.1 创建表
 ### 19.1.1 表创建基础

@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 7
+order: 8
 dir:
-    order: 7
+    order: 8
 ---
 ## 7.1 使用mysql正则表达式
 ### 7.1.1 基本字符匹配

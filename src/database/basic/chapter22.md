@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 22
+order: 23
 dir:
-    order: 22
+    order: 23
 ---
 ## 22.1 游标
 > [!important]

@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 14
+order: 15
 dir:
-    order: 14
+    order: 15
 ---
 ## 14.1 使用表别名
 ```sql

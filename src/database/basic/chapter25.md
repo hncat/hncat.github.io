@@ -6,9 +6,9 @@ tags:
     - 数据库
 categories: mysql
 isOriginal: true
-order: 25
+order: 26
 dir:
-    order: 25
+    order: 26
 ---
 ## 25.1 字符集和校对顺序
 :white_medium_small_square: **字符集**为字母和符号的集合；
