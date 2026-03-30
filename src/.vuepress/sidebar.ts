@@ -8,14 +8,21 @@ export default sidebar({
       icon: "code",
       prefix: "code/",
       link: "code/",
-      children: "structure",
+      children: [{
+        text: "并发编程",
+        icon: "code",
+        prefix: "thread/",
+        link: "thread/",
+        collapsible: true,
+        children: "structure"
+      }],
     },
     {
       text: "计算机基础",
       icon: "book",
       prefix: "cs/",
       link: "cs/",
-      collapsible: true,
+      // collapsible: true,
       children: [{
         text: "链接、装载和库",
         icon: "book",
