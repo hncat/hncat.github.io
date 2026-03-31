@@ -2,9 +2,11 @@
 title: std::atomic_flag
 date: 2026-03-30
 tags:
-    - 计算机基础
+    - 并发
     - c/c++
-categories: c/c++
+categories:
+  - 并发
+  - c/c++
 isOriginal: true
 order: 2
 dir:
@@ -13,7 +15,7 @@ dir:
 ## std::atomic_flag
 `std::atomic_flag`是最简单的原子类型，它表示了一个bool标志。这个类型的对象可以在两个状态间切换: 设置和清除。
 `std::atomic_flag`类型的对象必须且只能被ATOMIC_FLAG_INIT初始化。初始化状态位是‘清除’状态。
-```c++
+```cpp
 std::atomic_flag f = ATOMIC_FLAG_INIT;
 ```
 当标志对象已初始化，那么只能做三件事情：销毁，清除或设置(查询之前的值)。对应成员函数: clear()、test_and_set()。
