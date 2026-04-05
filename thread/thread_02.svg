@@ -1,0 +1,117 @@
+<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="writeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0f3460"/>
+    </linearGradient>
+    <linearGradient id="readGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16213e"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrowSw" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto">
+      <path d="M0,0 L0,12 L12,6 z" fill="#e94560"/>
+    </marker>
+    <marker id="arrowSeq" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+    <marker id="arrowRmw" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#ffd93d"/>
+    </marker>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="800" height="500" fill="#0a0a0a"/>
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, monospace" font-size="18" font-weight="bold" filter="url(#glow)">
+    synchronizes-with 关系：原子写 W 与后续读的关系
+  </text>
+  <!-- Thread A: Writer -->
+  <g transform="translate(50, 70)">
+    <rect x="0" y="0" width="300" height="45" rx="8" fill="url(#writeGrad)" stroke="#e94560" stroke-width="2"/>
+    <text x="150" y="28" text-anchor="middle" fill="#e94560" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold">
+      Thread A (写线程)
+    </text>
+    <!-- W: Initial write -->
+    <rect x="20" y="70" width="260" height="60" rx="6" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="150" y="95" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, monospace" font-size="13">
+      W: x.store(value)
+    </text>
+    <text x="150" y="115" text-anchor="middle" fill="#e94560" font-family="JetBrains Mono, monospace" font-size="11">
+      原子写操作 (release)
+    </text>
+    <!-- W1: Same thread subsequent write -->
+    <rect x="20" y="155" width="260" height="60" rx="6" fill="#1a1a2e" stroke="#ff6b6b" stroke-width="2"/>
+    <text x="150" y="180" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, monospace" font-size="13">
+      W1: x.store(new_val)
+    </text>
+    <text x="150" y="200" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono, monospace" font-size="11">
+      同线程后续写
+    </text>
+    <!-- Arrow W -> W1 (sequenced-before) -->
+    <line x1="150" y1="140" x2="150" y2="155" stroke="#4ecca3" stroke-width="2" marker-end="url(#arrowSeq)"/>
+    <text x="165" y="152" fill="#4ecca3" font-family="JetBrains Mono, monospace" font-size="10">sb</text>
+  </g>
+  <!-- Thread B: Reader -->
+  <g transform="translate(450, 70)">
+    <rect x="0" y="0" width="300" height="45" rx="8" fill="url(#readGrad)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="150" y="28" text-anchor="middle" fill="#4ecca3" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold">
+      Thread B (读线程)
+    </text>
+    <!-- R: Read W -->
+    <rect x="20" y="70" width="260" height="60" rx="6" fill="#1a1a2e" stroke="#4ecca3" stroke-width="3"/>
+    <text x="150" y="95" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, monospace" size="13">
+      R: x.load()
+    </text>
+    <text x="150" y="115" text-anchor="middle" fill="#4ecca3" font-family="JetBrains Mono, monospace" font-size="11">
+      读到 W 写入的值 (acquire)
+    </text>
+    <!-- RMW: Read-Modify-Write -->
+    <rect x="20" y="155" width="260" height="75" rx="6" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="150" y="180" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, monospace" font-size="13">
+      RMW: x.fetch_add() / CAS
+    </text>
+    <text x="150" y="200" text-anchor="middle" fill="#ffd93d" font-family="JetBrains Mono, monospace" font-size="11">
+      先读(见到W或W1)，再修改
+    </text>
+    <text x="150" y="218" text-anchor="middle" fill="#aaa" font-family="JetBrains Mono, monospace" font-size="9">
+      读到的值 ∈ {W, W1, 后续写}
+    </text>
+  </g>
+  <!-- synchronizes-with arrows -->
+  <!-- W -> R -->
+  <path d="M 330 130 Q 400 100 470 130" stroke="#e94560" stroke-width="4" fill="none" marker-end="url(#arrowSw)" filter="url(#glow)"/>
+  <text x="400" y="110" text-anchor="middle" fill="#e94560" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold">
+    synchronizes-with
+  </text>
+  <!-- W/W1 -> RMW (read part) -->
+  <path d="M 330 200 Q 400 220 470 200" stroke="#ffd93d" stroke-width="3" fill="none" marker-end="url(#arrowRmw)" stroke-dasharray="5,3"/>
+  <text x="400" y="235" text-anchor="middle" fill="#ffd93d" font-family="JetBrains Mono, monospace" font-size="11">
+    RMW 的读操作同步于 W/W1
+  </text>
+  <!-- W1 -> R (if R reads W1) -->
+  <path d="M 330 185 Q 390 160 450 145" stroke="#ff6b6b" stroke-width="2" fill="none" marker-end="url(#arrowSw)" opacity="0.6"/>
+  <text x="380" y="155" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono, monospace" font-size="10" opacity="0.8">
+    若 R 读到 W1
+  </text>
+  <!-- Legend -->
+  <g transform="translate(50, 380)">
+    <rect x="0" y="0" width="700" height="100" rx="8" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+    <text x="20" y="25" fill="#fff" font-family="JetBrains Mono, monospace" font-size="13" font-weight="bold">
+      synchronizes-with 规则：
+    </text>
+    <text x="20" y="50" fill="#e94560" font-family="JetBrains Mono, monospace" font-size="11">
+      • 原子写 W 同步于 读取 W 写入值的原子读 R（跨线程）
+    </text>
+    <text x="20" y="70" fill="#ff6b6b" font-family="JetBrains Mono, monospace" font-size="11">
+      • 同线程后续写 W1 也参与同步（通过 sequenced-before 传递）
+    </text>
+    <text x="20" y="90" fill="#ffd93d" font-family="JetBrains Mono, monospace" font-size="11">
+      • RMW 操作：其"读"部分可同步于 W/W1，"写"部分成为新的同步点
+    </text>
+  </g>
+</svg>

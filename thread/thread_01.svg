@@ -1,0 +1,57 @@
+<svg viewBox="0 0 720 440" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#e94560"/>
+    </marker>
+  </defs>
+  <rect width="720" height="440" fill="#0a0a0a"/>
+  <text x="360" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">C++ 内存模型：Happens-Before &amp; Synchronizes-With</text>
+  <g transform="translate(40,60)">
+    <rect x="0" y="0" width="240" height="40" rx="6" fill="url(#t1)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="120" y="25" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">write_thread (T1)</text>
+    <rect x="15" y="60" width="210" height="55" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="120" y="82" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">// 3: data.push_back(42)</text>
+    <text x="120" y="102" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="9">非原子写 data[0]</text>
+    <rect x="15" y="135" width="210" height="55" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="2"/>
+    <text x="120" y="157" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">// 4: data_ready = true</text>
+    <text x="120" y="177" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="9" font-weight="bold">原子写 (release)</text>
+  </g>
+  <g transform="translate(440,60)">
+    <rect x="0" y="0" width="240" height="40" rx="6" fill="url(#t2)" stroke="#ffd93d" stroke-width="2"/>
+    <text x="120" y="25" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="13" font-weight="bold">ready_thread (T2)</text>
+    <rect x="15" y="60" width="210" height="55" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="2"/>
+    <text x="120" y="82" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">// 1: while(!ready.load())</text>
+    <text x="120" y="102" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="9" font-weight="bold">原子读 (acquire) → true</text>
+    <rect x="15" y="135" width="210" height="55" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="120" y="157" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">// 2: cout &lt;&lt; data[0]</text>
+    <text x="120" y="177" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9">非原子读 data[0]</text>
+  </g>
+  <line x1="160" y1="130" x2="160" y2="135" stroke="#4ecca3" stroke-width="2" marker-end="url(#ag)"/>
+  <text x="170" y="138" fill="#4ecca3" font-family="monospace" font-size="10">hb</text>
+  <line x1="560" y1="130" x2="560" y2="135" stroke="#4ecca3" stroke-width="2" marker-end="url(#ag)"/>
+  <text x="570" y="138" fill="#4ecca3" font-family="monospace" font-size="10">hb</text>
+  <path d="M 265 190 Q 360 140 455 142" stroke="#e94560" stroke-width="3" fill="none" marker-end="url(#ar)"/>
+  <text x="360" y="165" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">synchronizes-with</text>
+  <path d="M 265 95 Q 360 70 455 95" stroke="#ffd93d" stroke-width="1.5" stroke-dasharray="5,3" fill="none"/>
+  <text x="360" y="85" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9">transitive: 3→4→1→2</text> 
+  <g transform="translate(40, 340)">
+    <rect x="0" y="0" width="640" height="85" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+    <text x="15" y="22" fill="#fff" font-family="monospace" font-size="11" font-weight="bold">图例：</text>
+    <line x1="15" y1="35" x2="45" y2="35" stroke="#4ecca3" stroke-width="2" marker-end="url(#ag)"/>
+    <text x="55" y="38" fill="#4ecca3" font-family="monospace" font-size="9">happens-before (程序顺序)</text>
+    <line x1="15" y1="55" x2="45" y2="55" stroke="#e94560" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="55" y="58" fill="#e94560" font-family="monospace" font-size="9">synchronizes-with (线程同步)</text>
+    <text x="15" y="75" fill="#aaa" font-family="monospace" font-size="9">结果：写 data happens-before 读 data，保证读到 42</text>
+  </g>
+</svg>

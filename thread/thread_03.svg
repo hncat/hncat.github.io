@@ -1,0 +1,111 @@
+<svg viewBox="0 0 1000 600" height="auto" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#e94560"/>
+    </marker>
+    <marker id="ai" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#ffd93d"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="600" fill="#0a0a0a"/>
+  <!-- Title -->
+  <text x="500" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="18" font-weight="bold">
+    排序先行(sb) + 同步于(sw) = 线程间先行(ihb)
+  </text>
+  <!-- Thread A -->
+  <g transform="translate(30, 50)">
+    <rect x="0" y="0" width="450" height="40" rx="6" fill="url(#t1)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="225" y="25" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="14" font-weight="bold">Thread A (生产者)</text>
+    <!-- A -->
+    <rect x="15" y="50" width="420" height="55" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="225" y="72" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">A: data[0] = 1</text>
+    <text x="225" y="92" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="10">非原子写（排序先行起点）</text>
+    <!-- B -->
+    <rect x="15" y="115" width="420" height="55" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="225" y="137" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">B: data[1] = 2</text>
+    <text x="225" y="157" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="10">非原子写（sb-chain）</text>
+    <!-- C -->
+    <rect x="15" y="180" width="420" height="55" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="225" y="202" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">C: data[2] = 3</text>
+    <text x="225" y="222" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="10">非原子写（sb-chain）</text>
+    <!-- D -->
+    <rect x="15" y="245" width="420" height="60" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="225" y="270" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">D: ready.store(true)</text>
+    <text x="225" y="292" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">原子写(release) ← 唯一同步点</text>
+    <!-- sb arrows -->
+    <line x1="225" y1="108" x2="225" y2="115" stroke="#4ecca3" stroke-width="2" marker-end="url(#ag)"/>
+    <text x="235" y="114" fill="#4ecca3" font-family="monospace" font-size="9">sb</text>
+    <line x1="225" y1="173" x2="225" y2="180" stroke="#4ecca3" stroke-width="2" marker-end="url(#ag)"/>
+    <text x="235" y="179" fill="#4ecca3" font-family="monospace" font-size="9">sb</text>
+    <line x1="225" y1="238" x2="225" y2="245" stroke="#4ecca3" stroke-width="2" marker-end="url(#ag)"/>
+    <text x="235" y="244" fill="#4ecca3" font-family="monospace" font-size="9">sb</text>
+  </g>
+  <!-- Thread B -->
+  <g transform="translate(520, 50)">
+    <rect x="0" y="0" width="450" height="40" rx="6" fill="url(#t2)" stroke="#ffd93d" stroke-width="2"/>
+    <text x="225" y="25" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="14" font-weight="bold">Thread B (消费者)</text>
+    <!-- E -->
+    <rect x="15" y="70" width="420" height="60" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="225" y="95" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">E: while(!ready.load()) {}</text>
+    <text x="225" y="117" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">原子读(acquire) ← 唯一同步点</text>
+    <!-- F -->
+    <rect x="15" y="145" width="420" height="75" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="225" y="170" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">F: 读取 data[0/1/2]</text>
+    <text x="225" y="192" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">非原子读（全部可见!）</text>
+    <text x="225" y="212" text-anchor="middle" fill="#aaa" font-family="monospace" font-size="10">// 保证读到 1, 2, 3</text>
+    <!-- sb arrow -->
+    <line x1="225" y1="133" x2="225" y2="145" stroke="#4ecca3" stroke-width="2" marker-end="url(#ag)"/>
+    <text x="235" y="142" fill="#4ecca3" font-family="monospace" font-size="9">sb</text>
+  </g>
+  <!-- sw arrow -->
+  <path d="M 480 305 Q 500 250 520 130" stroke="#e94560" stroke-width="3" fill="none" marker-end="url(#ar)"/>
+  <text x="500" y="210" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">sw</text>
+  <!-- ihb arrows -->
+  <path d="M 480 78 Q 500 60 535 170" stroke="#ffd93d" stroke-width="1.5" stroke-dasharray="4,2" fill="none" marker-end="url(#ai)"/>
+  <path d="M 480 143 Q 500 120 535 185" stroke="#ffd93d" stroke-width="1.5" stroke-dasharray="4,2" fill="none" marker-end="url(#ai)" opacity="0.8"/>
+  <path d="M 480 208 Q 500 170 535 200" stroke="#ffd93d" stroke-width="1.5" stroke-dasharray="4,2" fill="none" marker-end="url(#ai)" opacity="0.6"/>
+  <text x="505" y="65" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="10">ihb</text>
+  <text x="505" y="78" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9">A→D→E→F</text>
+  <text x="505" y="91" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9">B→D→E→F</text>
+  <text x="505" y="104" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9">C→D→E→F</text>
+  <!-- Formula Box - 关键：y=360，确保在viewBox内 -->
+  <g transform="translate(30, 360)">
+    <rect x="0" y="0" width="940" height="100" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+    <text x="15" y="25" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">传递性公式：</text>
+    <text x="15" y="50" fill="#4ecca3" font-family="monospace" font-size="12">A —sb→ B —sb→ C —sb→ </text>
+    <text x="225" y="50" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold">D —sw→ </text>
+    <text x="305" y="50" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold">E —sb→ </text>
+    <text x="385" y="50" fill="#ffd93d" font-family="monospace" font-size="12" font-weight="bold">F</text>
+    <text x="415" y="50" fill="#fff" font-family="monospace" font-size="13"> ⇒ </text>
+    <text x="445" y="50" fill="#4ecca3" font-family="monospace" font-size="12">A,B,C </text>
+    <text x="505" y="50" fill="#ffd93d" font-family="monospace" font-size="12" font-weight="bold">—ihb→ F</text>
+    <text x="575" y="50" fill="#aaa" font-family="monospace" font-size="11">（单次同步，全链可见）</text>
+    <text x="15" y="75" fill="#4ecca3" font-family="monospace" font-size="10">sb=sequenced-before（同线程程序顺序）</text>
+    <text x="280" y="75" fill="#e94560" font-family="monospace" font-size="10">sw=synchronizes-with（跨线程同步点）</text>
+    <text x="530" y="75" fill="#ffd93d" font-family="monospace" font-size="10">ihb=inter-thread-happens-before（线程间先行）</text>
+    <text x="15" y="92" fill="#aaa" font-family="monospace" font-size="10">
+      结论：D→E 单次同步，通过 sb 传递性，A/B/C 自动对 F 可见（无需为每个数据单独同步）
+    </text>
+  </g>
+  <!-- Key insight -->
+  <g transform="translate(30, 470)">
+    <rect x="0" y="0" width="940" height="60" rx="6" fill="#0f3460" stroke="#4ecca3" stroke-width="1"/>
+    <text x="470" y="28" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">
+      核心洞察：同线程多次非原子修改 + 单次原子同步 = 全链自动可见
+    </text>
+    <text x="470" y="50" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="11">
+      这是 C++ 内存模型的关键优化：sb 链 + sw 点 = ihb 覆盖整个操作序列
+    </text>
+  </g>
+</svg>
