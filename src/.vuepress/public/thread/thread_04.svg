@@ -1,0 +1,112 @@
+
+<svg viewBox="0 0 1000 750" height="auto" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="as" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#e94560"/>
+    </marker>
+    <marker id="ap" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#a855f7"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="750" fill="#0a0a0a"/>
+  <!-- Title -->
+  <text x="500" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">
+    强先行发生 vs 普通先行发生
+  </text>
+  <!-- Left: Strong HB -->
+  <g transform="translate(30, 45)">
+    <rect x="0" y="0" width="450" height="35" rx="6" fill="url(#t1)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="225" y="23" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">强先行发生（Strong HB）</text>
+    <rect x="15" y="45" width="420" height="50" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="225" y="65" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">A: x.store(p, release)</text>
+    <text x="225" y="85" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="9">B: p1 = x.load(acquire)</text>
+    <rect x="15" y="105" width="420" height="50" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="225" y="125" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="11">C: *p1 // 强先行: A→B→C</text>
+    <text x="225" y="145" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="9">D: 其他读 // 也受保护</text>
+    <line x1="225" y1="98" x2="225" y2="105" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+    <text x="235" y="104" fill="#4ecca3" font-family="monospace" font-size="8">sb</text>
+  </g>
+  <!-- Right: Plain HB (consume) -->
+  <g transform="translate(520, 45)">
+    <rect x="0" y="0" width="450" height="35" rx="6" fill="url(#t2)" stroke="#a855f7" stroke-width="2"/>
+    <text x="225" y="23" text-anchor="middle" fill="#a855f7" font-family="monospace" font-size="13" font-weight="bold">普通先行（Plain HB/consume）</text>
+    <rect x="15" y="45" width="420" height="50" rx="4" fill="#1a1a2e" stroke="#a855f7" stroke-width="2"/>
+    <text x="225" y="65" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">E: x.store(p, release)</text>
+    <text x="225" y="85" text-anchor="middle" fill="#a855f7" font-family="monospace" font-size="9">F: p2 = x.load(consume)</text>
+    <rect x="15" y="105" width="420" height="50" rx="4" fill="#1a1a2e" stroke="#a855f7" stroke-width="2"/>
+    <text x="225" y="125" text-anchor="middle" fill="#a855f7" font-family="monospace" font-size="11">G: *p2 // 依赖链受保护</text>
+    <text x="225" y="145" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="9">H: 其他读 // 无保证！</text>
+    <line x1="225" y1="98" x2="225" y2="105" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+    <text x="235" y="104" fill="#4ecca3" font-family="monospace" font-size="8">dep</text>
+  </g>
+  <!-- Arrows -->
+  <path d="M 480 95 Q 500 80 520 70" stroke="#e94560" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+  <text x="500" y="78" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="9" font-weight="bold">sw</text>
+  <path d="M 480 165 Q 500 130 520 120" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#ap)" stroke-dasharray="3,2"/>
+  <text x="500" y="135" text-anchor="middle" fill="#a855f7" font-family="monospace" font-size="9" font-weight="bold">sw</text>
+  <!-- Key Difference - 位置上调 -->
+  <g transform="translate(30, 210)">
+    <rect x="0" y="0" width="940" height="100" rx="6" fill="#1a1a1a" stroke="#a855f7" stroke-width="2"/>
+    <text x="470" y="22" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      关键区别：memory_order_consume 只保护"依赖链"
+    </text>
+    <text x="20" y="48" fill="#4ecca3" font-family="monospace" font-size="10">
+      强先行（acquire）：同步后所有先前操作对后续线程全可见
+    </text>
+    <text x="20" y="68" fill="#aaa" font-family="monospace" font-size="9">
+      A sw B + B sb C ⟹ A strong-hb C（C 可见 A 的所有副作用）
+    </text>
+    <text x="500" y="48" fill="#a855f7" font-family="monospace" font-size="10">
+      普通先行（consume）：仅"依赖于返回值"的操作受保护
+    </text>
+    <text x="500" y="68" fill="#aaa" font-family="monospace" font-size="9">
+      E sw F + F 依赖 G ⟹ E hb G（仅 G，H 可能看不到 E 的副作用）
+    </text>
+    <text x="470" y="90" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      结论：consume 不保证与返回值无关的操作的可见性！
+    </text>
+  </g>
+  <!-- Formula - 关键：y=320，确保可见 -->
+  <g transform="translate(30, 320)">
+    <rect x="0" y="0" width="940" height="130" rx="6" fill="#0f3460" stroke="#333" stroke-width="1"/>
+    <text x="20" y="25" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">传递性对比：</text>
+    <text x="20" y="50" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">强先行发生：</text>
+    <text x="150" y="50" fill="#4ecca3" font-family="monospace" font-size="10">
+      A —sw(acquire)→ B —sb→ C  ⟹  A —strong-hb→ C
+    </text>
+    <text x="20" y="72" fill="#aaa" font-family="monospace" font-size="9">
+      C 可见 A 的所有副作用（全序保证）
+    </text>
+    <text x="20" y="98" fill="#a855f7" font-family="monospace" font-size="11" font-weight="bold">普通先行发生：</text>
+    <text x="150" y="98" fill="#a855f7" font-family="monospace" font-size="10">
+      E —sw(consume)→ F —依赖→ G  ⟹  E —hb→ G
+    </text>
+    <text x="20" y="120" fill="#aaa" font-family="monospace" font-size="9">
+      仅 G 及其依赖者可见 E 的副作用；H（不依赖 F）无保证！
+    </text>
+  </g>
+  <!-- Bottom Note - y=460，确保在 viewBox 内 -->
+  <g transform="translate(30, 460)">
+    <rect x="0" y="0" width="940" height="80" rx="6" fill="#1a1a1e" stroke="#666" stroke-width="1"/>
+    <text x="470" y="28" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">实际编程建议</text>
+    <text x="470" y="52" text-anchor="middle" fill="#aaa" font-family="monospace" font-size="10">
+      由于 memory_order_consume 的复杂性和编译器实现差异，
+    </text>
+    <text x="470" y="72" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="10" font-weight="bold">
+      大多数代码应使用 memory_order_acquire/release 获得强先行保证
+    </text>
+  </g>
+  <!-- Extra space at bottom -->
+  <text x="500" y="580" text-anchor="middle" fill="#0a0a0a" font-family="monospace" font-size="1">.</text>
+</svg>
