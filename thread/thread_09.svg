@@ -1,0 +1,183 @@
+<svg viewBox="0 0 1000 750" width="1000" height="750" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="as" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#e94560"/>
+    </marker>
+    <marker id="ay" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#ffd93d"/>
+    </marker>
+  </defs>
+  
+  <rect width="1000" height="750" fill="#0a0a0a"/>
+  
+  <!-- Title -->
+  <text x="500" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="18" font-weight="bold">
+    混合内存序：relaxed + release/acquire = 正确同步！
+  </text>
+  <text x="500" y="55" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">
+    assert(z != 0) 永不触发！关键：while 循环保证 ③ 看到 y=true
+  </text>
+  
+  <!-- Thread A: write_x_then_y -->
+  <g transform="translate(50, 80)">
+    <rect x="0" y="0" width="400" height="35" rx="6" fill="url(#t1)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="200" y="23" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">
+      Thread A (write_x_then_y)
+    </text>
+    
+    <!-- ① x.store relaxed -->
+    <rect x="20" y="45" width="360" height="55" rx="4" fill="#1a1a2e" stroke="#666" stroke-width="2"/>
+    <text x="200" y="68" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">
+      ① x.store(true, relaxed)
+    </text>
+    <text x="200" y="88" text-anchor="middle" fill="#666" font-family="monospace" font-size="10">
+      无同步，但同线程内先于 ②
+    </text>
+    
+    <!-- ② y.store release -->
+    <rect x="20" y="110" width="360" height="55" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="200" y="133" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      ② y.store(true, release)
+    </text>
+    <text x="200" y="153" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      关键：与 Thread B 的 acquire 同步！
+    </text>
+    
+    <!-- sb arrow -->
+    <line x1="200" y1="103" x2="200" y2="110" stroke="#4ecca3" stroke-width="3" marker-end="url(#as)"/>
+    <text x="215" y="110" fill="#4ecca3" font-family="monospace" font-size="10" font-weight="bold">sb</text>
+  </g>
+  
+  <!-- Thread B: read_y_then_x -->
+  <g transform="translate(550, 80)">
+    <rect x="0" y="0" width="400" height="35" rx="6" fill="url(#t2)" stroke="#ffd93d" stroke-width="2"/>
+    <text x="200" y="23" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="13" font-weight="bold">
+      Thread B (read_y_then_x)
+    </text>
+    
+    <!-- ③ y.load acquire in while -->
+    <rect x="20" y="50" width="360" height="60" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="200" y="75" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      ③ while(!y.load(acquire))
+    </text>
+    <text x="200" y="98" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      关键：自旋直到与 ② 同步！
+    </text>
+    
+    <!-- ④ x.load relaxed -->
+    <rect x="20" y="125" width="360" height="55" rx="4" fill="#1a1a2e" stroke="#666" stroke-width="2"/>
+    <text x="200" y="148" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">
+      ④ if(x.load(relaxed)) z++
+    </text>
+    <text x="200" y="168" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="10" font-weight="bold">
+      必然看到 true！（通过传递性）
+    </text>
+    
+    <!-- sb arrow -->
+    <line x1="200" y1="113" x2="200" y2="125" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+    <text x="215" y="122" fill="#4ecca3" font-family="monospace" font-size="9">sb</text>
+  </g>
+  
+  <!-- Synchronizes-with arrow -->
+  <path d="M 430 165 Q 490 140 550 140" stroke="#e94560" stroke-width="4" fill="none" marker-end="url(#ar)"/>
+  <text x="490" y="125" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold" filter="url(#glow)">
+    synchronizes-with
+  </text>
+  
+  <!-- Key insight: transitivity -->
+  <g transform="translate(50, 280)">
+    <rect x="0" y="0" width="900" height="140" rx="6" fill="#0f3460" stroke="#ffd93d" stroke-width="2"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="14" font-weight="bold">
+      关键：传递性链（Transitivity Chain）
+    </text>
+    
+    <text x="20" y="55" fill="#4ecca3" font-family="monospace" font-size="12" font-weight="bold">
+      ① x.store(relaxed) —sb→ ② y.store(release) —sw→ ③ y.load(acquire) —sb→ ④ x.load(relaxed)
+    </text>
+    
+    <text x="20" y="85" fill="#fff" font-family="monospace" font-size="11">
+      • ① 和 ② 在同一线程，有 sequenced-before（sb）关系
+    </text>
+    <text x="20" y="108" fill="#fff" font-family="monospace" font-size="11">
+      • ②（release）和 ③（acquire）在不同线程，有 synchronizes-with（sw）关系
+    </text>
+    <text x="20" y="131" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">
+      • 传递性：① happens-before ④，因此 ④ 必然看到 ① 写入的 true！
+    </text>
+  </g>
+  
+  <!-- Why while loop is crucial -->
+  <g transform="translate(50, 435)">
+    <rect x="0" y="0" width="900" height="120" rx="6" fill="#1a1a1e" stroke="#e94560" stroke-width="2"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">
+      为什么 while 循环至关重要？
+    </text>
+    
+    <text x="20" y="55" fill="#aaa" font-family="monospace" font-size="11">
+      • while 循环保证：③ 会一直重试，直到 y.load(acquire) 返回 true
+    </text>
+    <text x="20" y="78" fill="#aaa" font-family="monospace" font-size="11">
+      • 只有当 ② y.store(release) 执行后，③ 才能读到 true，建立 synchronizes-with
+    </text>
+    <text x="20" y="101" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      • 如果去掉 while（单次读取），③ 可能读到 false，此时与 ② 无同步，①→④ 的传递性链断裂！
+    </text>
+  </g>
+  
+  <!-- Comparison: with vs without while -->
+  <g transform="translate(50, 570)">
+    <rect x="0" y="0" width="440" height="100" rx="6" fill="#0f3460" stroke="#4ecca3" stroke-width="2"/>
+    <text x="220" y="25" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="12" font-weight="bold">
+      ✓ 有 while 循环：正确
+    </text>
+    <text x="20" y="55" fill="#fff" font-family="monospace" font-size="10">
+      ③ 强制等待 y=true，必然与 ② 同步
+    </text>
+    <text x="20" y="78" fill="#4ecca3" font-family="monospace" font-size="10">
+      传递性：① → ② → ③ → ④
+    </text>
+    <text x="20" y="98" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">
+      ④ 必然看到 x=true
+    </text>
+  </g>
+  
+  <g transform="translate(510, 570)">
+    <rect x="0" y="0" width="440" height="100" rx="6" fill="#1a1a1e" stroke="#e94560" stroke-width="2"/>
+    <text x="220" y="25" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold">
+      ✗ 无 while 循环（单次 if）：错误
+    </text>
+    <text x="20" y="55" fill="#fff" font-family="monospace" font-size="10">
+      ③ 可能读到 y=false，与 ② 无同步
+    </text>
+    <text x="20" y="78" fill="#666" font-family="monospace" font-size="10">
+      无传递性，① 和 ④ 无序
+    </text>
+    <text x="20" y="98" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      ④ 可能看到 x=false，assert 触发！
+    </text>
+  </g>
+  
+  <!-- Bottom note -->
+  <g transform="translate(50, 685)">
+    <rect x="0" y="0" width="900" height="55" rx="6" fill="#0f3460" stroke="#4ecca3" stroke-width="1"/>
+    <text x="450" y="28" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      核心洞察：release/acquire 必须成对，且 acquire 必须实际看到 release 的值才能建立同步
+    </text>
+    <text x="450" y="50" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="11">
+      while 循环确保 ③ 必然看到 ② 的 true，从而建立跨线程的 happens-before 传递性
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,150 @@
+<svg viewBox="0 0 1000 700" width="1000" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="as" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+  </defs>
+  
+  <rect width="1000" height="750" fill="#0a0a0a"/>
+  
+  <!-- Title -->
+  <text x="500" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="17" font-weight="bold">
+    memory_order_relaxed：assert(z != 0) 可能触发！
+  </text>
+  <text x="500" y="52" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold">
+    无全序保证，x 和 y 的操作相互独立
+  </text>
+  
+  <!-- Thread A -->
+  <g transform="translate(50, 70)">
+    <rect x="0" y="0" width="400" height="32" rx="6" fill="url(#t1)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="200" y="21" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="12" font-weight="bold">
+      Thread A (write_x_then_y)
+    </text>
+    
+    <rect x="20" y="40" width="360" height="50" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="2"/>
+    <text x="200" y="60" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">① x.store(true, relaxed)</text>
+    <text x="200" y="78" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="9" font-weight="bold">
+      对 y 无同步影响！
+    </text>
+    
+    <rect x="20" y="100" width="360" height="50" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="200" y="120" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">② y.store(true, relaxed)</text>
+    <text x="200" y="138" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9" font-weight="bold">
+      对 x 无可见性保证！
+    </text>
+    
+    <line x1="200" y1="93" x2="200" y2="100" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+    <text x="210" y="98" fill="#4ecca3" font-family="monospace" font-size="8">sb</text>
+  </g>
+  
+  <!-- Thread B -->
+  <g transform="translate(550, 70)">
+    <rect x="0" y="0" width="400" height="32" rx="6" fill="url(#t2)" stroke="#ffd93d" stroke-width="2"/>
+    <text x="200" y="21" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="12" font-weight="bold">
+      Thread B (read_y_then_x)
+    </text>
+    
+    <rect x="20" y="50" width="360" height="50" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="200" y="70" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">③ while(!y.load(relaxed))</text>
+    <text x="200" y="88" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9" font-weight="bold">
+      看到 y=true，但 x 可能仍=false！
+    </text>
+    
+    <rect x="20" y="115" width="360" height="50" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="200" y="135" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">④ if(x.load(relaxed)) z++</text>
+    <text x="200" y="153" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="9" font-weight="bold">
+      可能返回 false → assert 触发！
+    </text>
+    
+    <line x1="200" y1="103" x2="200" y2="115" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+    <text x="210" y="112" fill="#4ecca3" font-family="monospace" font-size="8">sb</text>
+  </g>
+  
+  <!-- The Problem -->
+  <g transform="translate(50, 245)">
+    <rect x="0" y="0" width="900" height="90" rx="6" fill="#1a1a1e" stroke="#e94560" stroke-width="2"/>
+    
+    <text x="450" y="22" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      关键问题：relaxed 操作之间没有 synchronizes-with 关系
+    </text>
+    
+    <text x="20" y="48" fill="#aaa" font-family="monospace" font-size="10">
+      • ① 和 ② 是同线程的 sb 关系，但 relaxed 不对外建立同步
+    </text>
+    <text x="20" y="68" fill="#aaa" font-family="monospace" font-size="10">
+      • ③ 看到 ② 的 y=true，但 relaxed load 不保证能看到 ① 的 x=true
+    </text>
+    <text x="20" y="85" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      • x 和 y 是不同变量，编译器/CPU 可能重排序 ①→②
+    </text>
+  </g>
+  
+  <!-- Execution Timeline - 增加高度确保所有行可见 -->
+  <g transform="translate(50, 345)">
+    <rect x="0" y="0" width="900" height="155" rx="6" fill="#0f3460" stroke="#e94560" stroke-width="2"/>
+    
+    <text x="450" y="22" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      可能的执行时序（导致 assert 触发）
+    </text>
+    
+    <text x="20" y="48" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">
+      时间线（Thread A 和 Thread B 交错执行）：
+    </text>
+    
+    <text x="40" y="72" fill="#fff" font-family="monospace" font-size="10">
+      T1: Thread A 执行 ① x.store(true) —— 写入缓冲区，未刷新到内存
+    </text>
+    <text x="40" y="95" fill="#fff" font-family="monospace" font-size="10">
+      T2: Thread A 执行 ② y.store(true) —— 立即对其他线程可见（不同变量！）
+    </text>
+    <text x="40" y="118" fill="#fff" font-family="monospace" font-size="10">
+      T3: Thread B 执行 ③ y.load() = true —— 跳出 while 循环
+    </text>
+    <!-- 关键修复：增加行间距，确保不重叠 -->
+    <text x="40" y="145" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      T4: Thread B 执行 ④ x.load() = false
+    </text>
+    <text x="360" y="145" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      —— ① 的写入尚未传播，z 不增加，assert 触发！
+    </text>
+  </g>
+  
+  <!-- Comparison -->
+  <g transform="translate(50, 510)">
+    <rect x="0" y="0" width="900" height="85" rx="6" fill="#1a1a1e" stroke="#4ecca3" stroke-width="1"/>
+    
+    <text x="450" y="22" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11" font-weight="bold">
+      对比：如果使用 memory_order_seq_cst
+    </text>
+    
+    <text x="20" y="48" fill="#4ecca3" font-family="monospace" font-size="10">
+      • seq_cst 要求全局全序，①→② 的顺序对所有线程可见
+    </text>
+    <text x="20" y="68" fill="#4ecca3" font-family="monospace" font-size="10">
+      • ③ 看到 y=true 时，通过 synchronizes-with 保证 ① 的 x=true 也可见
+    </text>
+    <text x="450" y="82" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="10" font-weight="bold">
+      结论：relaxed 不保证跨变量可见性，seq_cst 保证全序
+    </text>
+  </g>
+  
+  <!-- Bottom Warning - 上移确保可见 -->
+  <g transform="translate(50, 605)">
+    <rect x="0" y="0" width="900" height="45" rx="6" fill="#0f3460" stroke="#e94560" stroke-width="1"/>
+    <text x="450" y="28" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      警告：relaxed 操作只保证原子性，不保证顺序或可见性！
+    </text>
+  </g>
+  
+  <!-- Extra spacer -->
+  <text x="500" y="680" text-anchor="middle" fill="#0a0a0a" font-family="monospace" font-size="1">.</text>
+</svg>

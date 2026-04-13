@@ -1,0 +1,154 @@
+<svg viewBox="0 0 1000 700" width="1000" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2d1b69"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="as" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="800" fill="#0a0a0a"/>
+  <!-- Title -->
+  <text x="500" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="17" font-weight="bold">
+    memory_order_seq_cst 全序：z ∈ {1, 2}，assert(z != 0) 永不触发
+  </text>
+  <!-- Global Timeline -->
+  <g transform="translate(50, 50)">
+    <rect x="0" y="0" width="900" height="32" rx="6" fill="#1a1a1e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="450" y="20" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">
+      全局全序 (Seq-Cst Total Order) - 所有线程看到一致的操作顺序
+    </text>
+  </g>
+  <!-- Thread A -->
+  <g transform="translate(50, 95)">
+    <rect x="0" y="0" width="200" height="28" rx="6" fill="url(#t1)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="100" y="18" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">Thread A</text>
+    
+    <rect x="15" y="38" width="170" height="40" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="2"/>
+    <text x="100" y="55" text-anchor="middle" fill="#fff" font-family="monospace" font-size="10">① x.store(true)</text>
+    <text x="100" y="70" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="8" font-weight="bold">seq_cst</text>
+  </g>
+  <!-- Thread B -->
+  <g transform="translate(300, 95)">
+    <rect x="0" y="0" width="200" height="28" rx="6" fill="url(#t2)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="100" y="18" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">Thread B</text>
+    
+    <rect x="15" y="38" width="170" height="40" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="2"/>
+    <text x="100" y="55" text-anchor="middle" fill="#fff" font-family="monospace" font-size="10">② y.store(true)</text>
+    <text x="100" y="70" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="8" font-weight="bold">seq_cst</text>
+  </g>
+  <!-- Thread C -->
+  <g transform="translate(550, 95)">
+    <rect x="0" y="0" width="200" height="28" rx="6" fill="url(#t3)" stroke="#ffd93d" stroke-width="2"/>
+    <text x="100" y="18" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">Thread C</text>
+    
+    <rect x="15" y="38" width="170" height="35" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="100" y="58" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="9">while(!x.load())</text>
+    
+    <rect x="15" y="80" width="170" height="40" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="100" y="98" text-anchor="middle" fill="#fff" font-family="monospace" font-size="10">③ if(y.load()) z++</text>
+    <text x="100" y="113" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="8" font-weight="bold">seq_cst</text>
+    
+    <line x1="100" y1="76" x2="100" y2="80" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+  </g>
+  <!-- Thread D -->
+  <g transform="translate(800, 95)">
+    <rect x="0" y="0" width="150" height="28" rx="6" fill="url(#t3)" stroke="#ffd93d" stroke-width="2"/>
+    <text x="75" y="18" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">Thread D</text>
+    
+    <rect x="15" y="38" width="120" height="35" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="75" y="58" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="9">while(!y.load())</text>
+    
+    <rect x="15" y="80" width="120" height="40" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="75" y="98" text-anchor="middle" fill="#fff" font-family="monospace" font-size="10">④ if(x.load()) z++</text>
+    <text x="75" y="113" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="8" font-weight="bold">seq_cst</text>
+    
+    <line x1="75" y1="76" x2="75" y2="80" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+  </g>
+  <!-- Three Cases - 增加高度确保文字完整 -->
+  <g transform="translate(50, 250)">
+    <text x="450" y="15" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">
+      三种可能的全序与结果
+    </text>
+    <!-- Case 1: z = 2 -->
+    <rect x="0" y="30" width="290" height="130" rx="6" fill="#1a1a1e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="145" y="50" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">
+      情况 1: z = 2
+    </text>
+    <text x="145" y="70" text-anchor="middle" fill="#fff" font-family="monospace" font-size="9">①→②→③→④ 或 ②→①→③→④</text>
+    <text x="15" y="92" fill="#4ecca3" font-family="monospace" font-size="9">• C: x=true, y=true → z++</text>
+    <text x="15" y="110" fill="#ffd93d" font-family="monospace" font-size="9">• D: y=true, x=true → z++</text>
+    <text x="15" y="135" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">结果: z = 2 ✓</text>
+    <text x="15" y="150" fill="#666" font-family="monospace" font-size="8">两个存储都完成，两个加载都看到</text>
+    <!-- Case 2: z = 1 - 修复文字 -->
+    <rect x="305" y="30" width="290" height="130" rx="6" fill="#1a1a1e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="450" y="50" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">
+      情况 2: z = 1
+    </text>
+    <text x="450" y="70" text-anchor="middle" fill="#fff" font-family="monospace" font-size="9">①→③→②→④</text>
+    <!-- 修复：确保文字不重叠，y=false 完整显示 -->
+    <text x="320" y="92" fill="#4ecca3" font-family="monospace" font-size="9">• C: x=true, y=false</text>
+    <text x="320" y="110" fill="#aaa" font-family="monospace" font-size="9">→ 不执行 z++</text>
+    <text x="320" y="128" fill="#ffd93d" font-family="monospace" font-size="9">• D: y=true, x=true → z++</text>
+    <text x="320" y="150" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">结果: z = 1 ✓</text>
+    <!-- Case 3: z = 1 -->
+    <rect x="610" y="30" width="290" height="130" rx="6" fill="#1a1a1e" stroke="#e94560" stroke-width="2"/>
+    <text x="755" y="50" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      情况 3: z = 1
+    </text>
+    <text x="755" y="70" text-anchor="middle" fill="#fff" font-family="monospace" font-size="9">②→④→①→③</text>
+    <text x="625" y="92" fill="#4ecca3" font-family="monospace" font-size="9">• C: x=true, y=true → z++</text>
+    <text x="625" y="110" fill="#ffd93d" font-family="monospace" font-size="9">• D: y=true, x=false</text>
+    <text x="625" y="128" fill="#aaa" font-family="monospace" font-size="9">→ 不执行 z++</text>
+    <text x="625" y="150" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">结果: z = 1 ✓</text>
+  </g>
+  <!-- Why z cannot be 0 -->
+  <g transform="translate(50, 410)">
+    <rect x="0" y="0" width="900" height="140" rx="6" fill="#0f3460" stroke="#e94560" stroke-width="2"/>
+    <text x="450" y="22" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      为什么 z = 0 不可能？（反证法）
+    </text>
+    <text x="20" y="48" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      假设 z = 0，则 ③ 和 ④ 都必须返回 false（不执行 z++）：
+    </text>
+    <text x="20" y="72" fill="#aaa" font-family="monospace" font-size="9">
+      • ③ y.load() = false → 全序中 ② 必须在 ③ 之后（②→③）
+    </text>
+    <text x="20" y="90" fill="#aaa" font-family="monospace" font-size="9">
+      • ④ x.load() = false → 全序中 ① 必须在 ④ 之后（①→④）
+    </text>
+    <text x="20" y="108" fill="#aaa" font-family="monospace" font-size="9">
+      • 同时 C 的 while(!x) 要求 ①→③，D 的 while(!y) 要求 ②→④
+    </text>
+    <text x="450" y="130" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      矛盾！全序要求 ① 和 ② 有确定顺序，不可能同时满足 ①→④ 和 ②→③
+    </text>
+  </g>
+  <!-- Summary - 上移确保可见 -->
+  <g transform="translate(50, 565)">
+    <rect x="0" y="0" width="900" height="90" rx="6" fill="#1a1a1e" stroke="#4ecca3" stroke-width="1"/>
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      总结：memory_order_seq_cst 的全序保证
+    </text>
+    <text x="450" y="50" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">
+      z ∈ {1, 2}，assert(z != 0) 永不触发
+    </text>
+    <text x="450" y="72" text-anchor="middle" fill="#aaa" font-family="monospace" font-size="10">
+      z = 2：两个线程都增加；z = 1：只有一个线程增加，另一个看到 false
+    </text>
+    <text x="450" y="88" text-anchor="middle" fill="#666" font-family="monospace" font-size="9">
+      （seq_cst 的全序保证不可能出现双方都看到 false 的情况）
+    </text>
+  </g>
+  <!-- Bottom spacer -->
+  <text x="500" y="680" text-anchor="middle" fill="#0a0a0a" font-family="monospace" font-size="1">.</text>
+</svg>
