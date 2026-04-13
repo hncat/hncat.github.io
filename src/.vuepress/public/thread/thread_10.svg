@@ -1,0 +1,227 @@
+<svg viewBox="0 0 1000 800" width="1000" height="800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="as" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#e94560"/>
+    </marker>
+    <marker id="ay" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#ffd93d"/>
+    </marker>
+  </defs>
+  
+  <rect width="1000" height="800" fill="#0a0a0a"/>
+  
+  <!-- Title -->
+  <text x="500" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="18" font-weight="bold">
+    传递性同步链：sync1 → sync2 → data，所有断言不触发！
+  </text>
+  
+  <!-- Thread 1: Producer -->
+  <g transform="translate(50, 60)">
+    <rect x="0" y="0" width="280" height="35" rx="6" fill="url(#t1)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="140" y="23" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">
+      Thread 1 (Producer)
+    </text>
+    
+    <!-- data[0..4] stores -->
+    <rect x="15" y="45" width="250" height="85" rx="4" fill="#1a1a2e" stroke="#666" stroke-width="2"/>
+    <text x="140" y="65" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">
+      data[0]=42, data[1]=97
+    </text>
+    <text x="140" y="82" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">
+      data[2]=17, data[3]=-141
+    </text>
+    <text x="140" y="99" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">
+      data[4]=2003
+    </text>
+    <text x="140" y="118" text-anchor="middle" fill="#666" font-family="monospace" font-size="9">
+      all relaxed
+    </text>
+    
+    <!-- sync1.store -->
+    <rect x="15" y="140" width="250" height="50" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="140" y="162" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      ① sync1.store(true)
+    </text>
+    <text x="140" y="180" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      release
+    </text>
+    
+    <!-- sb arrow -->
+    <line x1="140" y1="133" x2="140" y2="140" stroke="#4ecca3" stroke-width="3" marker-end="url(#as)"/>
+    <text x="155" y="140" fill="#4ecca3" font-family="monospace" font-size="10" font-weight="bold">sb</text>
+  </g>
+  
+  <!-- Thread 2: Relay -->
+  <g transform="translate(360, 60)">
+    <rect x="0" y="0" width="280" height="35" rx="6" fill="url(#t2)" stroke="#ffd93d" stroke-width="2"/>
+    <text x="140" y="23" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="13" font-weight="bold">
+      Thread 2 (Relay)
+    </text>
+    
+    <!-- while sync1 -->
+    <rect x="15" y="45" width="250" height="55" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="3"/>
+    <text x="140" y="70" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      ② while(!sync1.load())
+    </text>
+    <text x="140" y="90" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">
+      acquire ← 与 ① 同步
+    </text>
+    
+    <!-- sync2.store -->
+    <rect x="15" y="115" width="250" height="50" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="3"/>
+    <text x="140" y="137" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      ③ sync2.store(true)
+    </text>
+    <text x="140" y="155" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="10" font-weight="bold">
+      release
+    </text>
+    
+    <!-- sb arrow -->
+    <line x1="140" y1="103" x2="140" y2="115" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+    <text x="155" y="112" fill="#4ecca3" font-family="monospace" font-size="9">sb</text>
+  </g>
+  
+  <!-- Thread 3: Consumer -->
+  <g transform="translate(670, 60)">
+    <rect x="0" y="0" width="280" height="35" rx="6" fill="url(#t2)" stroke="#4ecca3" stroke-width="2"/>
+    <text x="140" y="23" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">
+      Thread 3 (Consumer)
+    </text>
+    
+    <!-- while sync2 -->
+    <rect x="15" y="45" width="250" height="55" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="3"/>
+    <text x="140" y="70" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      ④ while(!sync2.load())
+    </text>
+    <text x="140" y="90" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="10" font-weight="bold">
+      acquire ← 与 ③ 同步
+    </text>
+    
+    <!-- assert data loads -->
+    <rect x="15" y="115" width="250" height="85" rx="4" fill="#1a1a2e" stroke="#4ecca3" stroke-width="2"/>
+    <text x="140" y="135" text-anchor="middle" fill="#fff" font-family="monospace" font-size="10">
+      assert(data[0..4])
+    </text>
+    <text x="140" y="152" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="9">
+      all relaxed
+    </text>
+    <text x="140" y="170" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="9" font-weight="bold">
+      必然看到 42,97,17,-141,2003
+    </text>
+    <text x="140" y="188" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="8">
+      （通过传递性保证）
+    </text>
+    
+    <!-- sb arrow -->
+    <line x1="140" y1="103" x2="140" y2="115" stroke="#4ecca3" stroke-width="2" marker-end="url(#as)"/>
+    <text x="155" y="112" fill="#4ecca3" font-family="monospace" font-size="9">sb</text>
+  </g>
+  
+  <!-- Synchronizes-with arrows -->
+  <path d="M 330 190 Q 345 172 360 152" stroke="#e94560" stroke-width="3" fill="none" marker-end="url(#ar)"/>
+  <text x="345" y="165" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="10" font-weight="bold">sw</text>
+  
+  <path d="M 640 165 Q 655 152 670 152" stroke="#ffd93d" stroke-width="3" fill="none" marker-end="url(#ay)"/>
+  <text x="655" y="140" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="10" font-weight="bold">sw</text>
+  
+  <!-- Transitivity chain explanation -->
+  <g transform="translate(50, 270)">
+    <rect x="0" y="0" width="900" height="160" rx="6" fill="#0f3460" stroke="#ffd93d" stroke-width="2"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="14" font-weight="bold">
+      传递性链（Transitivity Chain）：data[0..4] → sync1 → sync2 → data[0..4]
+    </text>
+    
+    <text x="20" y="55" fill="#4ecca3" font-family="monospace" font-size="12" font-weight="bold">
+      Thread 1: data stores —sb→ ① sync1.release
+    </text>
+    <text x="500" y="55" fill="#aaa" font-family="monospace" font-size="10">
+      同线程内，data 存储先于 sync1 存储
+    </text>
+    
+    <text x="20" y="80" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold">
+      Thread 1 ↔ Thread 2: ① sync1.release —sw→ ② sync1.acquire
+    </text>
+    <text x="500" y="80" fill="#aaa" font-family="monospace" font-size="10">
+      release-acquire 同步，建立线程间先行
+    </text>
+    
+    <text x="20" y="105" fill="#ffd93d" font-family="monospace" font-size="12" font-weight="bold">
+      Thread 2: ② sync1.acquire —sb→ ③ sync2.release
+    </text>
+    <text x="500" y="105" fill="#aaa" font-family="monospace" font-size="10">
+      同线程内，sync1 加载先于 sync2 存储
+    </text>
+    
+    <text x="20" y="130" fill="#ffd93d" font-family="monospace" font-size="12" font-weight="bold">
+      Thread 2 ↔ Thread 3: ③ sync2.release —sw→ ④ sync2.acquire
+    </text>
+    <text x="500" y="130" fill="#aaa" font-family="monospace" font-size="10">
+      第二次 release-acquire 同步
+    </text>
+    
+    <text x="450" y="155" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">
+      传递性结果：Thread 1 的 data 存储 → Thread 3 的 data 加载，所有断言必然通过！
+    </text>
+  </g>
+  
+  <!-- Key insight -->
+  <g transform="translate(50, 445)">
+    <rect x="0" y="0" width="900" height="120" rx="6" fill="#1a1a1e" stroke="#4ecca3" stroke-width="2"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">
+      关键洞察：Thread 2 只接触 sync1/sync2，但传递性链覆盖了整个 data
+    </text>
+    
+    <text x="20" y="55" fill="#aaa" font-family="monospace" font-size="11">
+      • Thread 2 作为"中继"，通过 while 循环确保 ② 与 ① 同步，③ 与 ② 同线程 sb
+    </text>
+    <text x="20" y="80" fill="#aaa" font-family="monospace" font-size="11">
+      • 两次 release-acquire 同步通过传递性连接，形成长链：data₁ → sync1 → sync2 → data₃
+    </text>
+    <text x="20" y="105" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">
+      • 即使 data 使用 relaxed，传递性保证 Thread 3 看到 Thread 1 写入的所有值
+    </text>
+  </g>
+  
+  <!-- Formula -->
+  <g transform="translate(50, 580)">
+    <rect x="0" y="0" width="900" height="90" rx="6" fill="#0f3460" stroke="#333" stroke-width="1"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      传递性公式
+    </text>
+    
+    <text x="20" y="55" fill="#666" font-family="monospace" font-size="11">
+      data[0..4] —sb→ ① —sw→ ② —sb→ ③ —sw→ ④ —sb→ data[0..4]
+    </text>
+    <text x="20" y="78" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">
+      ⟹ Thread 1 的 data 存储 happens-before Thread 3 的 data 加载
+    </text>
+  </g>
+  
+  <!-- Bottom note -->
+  <g transform="translate(50, 685)">
+    <rect x="0" y="0" width="900" height="55" rx="6" fill="#1a1a1e" stroke="#4ecca3" stroke-width="1"/>
+    <text x="450" y="28" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12" font-weight="bold">
+      核心要点：while 循环强制等待同步点，传递性将同步扩展到所有前置操作
+    </text>
+    <text x="450" y="48" text-anchor="middle" fill="#aaa" font-family="monospace" font-size="10">
+      （即使 Thread 2 不直接接触 data，传递性链保证了跨线程的数据可见性）
+    </text>
+  </g>
+  
+  <!-- Spacer -->
+  <text x="500" y="755" text-anchor="middle" fill="#0a0a0a" font-family="monospace" font-size="1">.</text>
+</svg>

@@ -1,0 +1,157 @@
+<svg viewBox="0 0 1000 850" width="1000" height="850" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="as" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4ecca3"/>
+    </marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L0,10 L10,5 z" fill="#e94560"/>
+    </marker>
+  </defs>
+  
+  <rect width="1000" height="850" fill="#0a0a0a"/>
+  
+  <!-- Title -->
+  <text x="500" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="18" font-weight="bold">
+    acquire/release vs relaxed：行为相同但机制不同
+  </text>
+  <text x="500" y="55" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="13" font-weight="bold">
+    assert(z != 0) 都可能触发！关键区别在同步粒度
+  </text>
+  
+  <!-- Top: Both versions have same problem -->
+  <g transform="translate(50, 75)">
+    <rect x="0" y="0" width="900" height="60" rx="6" fill="#1a1a1e" stroke="#e94560" stroke-width="2"/>
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="14" font-weight="bold">
+      核心洞察：两种内存序都无法阻止 assert 触发
+    </text>
+    <text x="450" y="48" text-anchor="middle" fill="#aaa" font-family="monospace" font-size="11">
+      因为 x 和 y 是独立变量，它们的同步/可见性互不影响
+    </text>
+  </g>
+  
+  <!-- Left: Relaxed version -->
+  <g transform="translate(50, 150)">
+    <rect x="0" y="0" width="430" height="40" rx="6" fill="#0f3460" stroke="#666" stroke-width="2"/>
+    <text x="215" y="25" text-anchor="middle" fill="#666" font-family="monospace" font-size="13" font-weight="bold">
+      Version 1: memory_order_relaxed
+    </text>
+    
+    <rect x="20" y="50" width="390" height="45" rx="4" fill="#1a1a2e" stroke="#666" stroke-width="1"/>
+    <text x="215" y="72" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">x.store(true, relaxed)</text>
+    <text x="215" y="88" text-anchor="middle" fill="#666" font-family="monospace" font-size="9">无任何同步，仅原子性</text>
+    
+    <rect x="20" y="105" width="390" height="45" rx="4" fill="#1a1a2e" stroke="#666" stroke-width="1"/>
+    <text x="215" y="127" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">y.store(true, relaxed)</text>
+    <text x="215" y="143" text-anchor="middle" fill="#666" font-family="monospace" font-size="9">无任何同步，仅原子性</text>
+    
+    <rect x="20" y="160" width="390" height="50" rx="4" fill="#0f3460" stroke="#e94560" stroke-width="2"/>
+    <text x="215" y="185" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      问题：无 happens-before，重排序自由
+    </text>
+    <text x="215" y="202" text-anchor="middle" fill="#aaa" font-family="monospace" font-size="9">CPU/编译器可任意重排 x 和 y 的操作</text>
+  </g>
+  
+  <!-- Right: Acquire-Release version -->
+  <g transform="translate(520, 150)">
+    <rect x="0" y="0" width="430" height="40" rx="6" fill="#0f3460" stroke="#4ecca3" stroke-width="2"/>
+    <text x="215" y="25" text-anchor="middle" fill="#4ecca3" font-family="monospace" font-size="13" font-weight="bold">
+      Version 2: acquire/release
+    </text>
+    
+    <rect x="20" y="50" width="390" height="45" rx="4" fill="#1a1a2e" stroke="#e94560" stroke-width="2"/>
+    <text x="215" y="72" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">x.store(true, release)</text>
+    <text x="215" y="88" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="9" font-weight="bold">与 C 的 x.load 同步</text>
+    
+    <rect x="20" y="105" width="390" height="45" rx="4" fill="#1a1a2e" stroke="#ffd93d" stroke-width="2"/>
+    <text x="215" y="127" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11">y.store(true, release)</text>
+    <text x="215" y="143" text-anchor="middle" fill="#ffd93d" font-family="monospace" font-size="9" font-weight="bold">与 D 的 y.load 同步</text>
+    
+    <rect x="20" y="160" width="390" height="50" rx="4" fill="#0f3460" stroke="#e94560" stroke-width="2"/>
+    <text x="215" y="185" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      问题：同步对独立，不跨变量
+    </text>
+    <text x="215" y="202" text-anchor="middle" fill="#aaa" font-family="monospace" font-size="9">x 的同步不影响 y 的可见性</text>
+  </g>
+  
+  <!-- Middle: The critical insight -->
+  <g transform="translate(50, 370)">
+    <rect x="0" y="0" width="900" height="140" rx="6" fill="#1a1a1e" stroke="#ffd93d" stroke-width="2"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="14" font-weight="bold">
+      关键区别：为什么 acquire/release 也失败？
+    </text>
+    
+    <text x="20" y="55" fill="#4ecca3" font-family="monospace" font-size="11" font-weight="bold">
+      acquire/release 建立了两个独立的 synchronizes-with 关系：
+    </text>
+    
+    <text x="40" y="80" fill="#fff" font-family="monospace" font-size="10">
+      • ① x.release —sw→ C.x.acquire：C 看到 x=true 时，① 之前的操作对 C 可见
+    </text>
+    <text x="40" y="102" fill="#fff" font-family="monospace" font-size="10">
+      • ② y.release —sw→ D.y.acquire：D 看到 y=true 时，② 之前的操作对 D 可见
+    </text>
+    
+    <text x="20" y="128" fill="#e94560" font-family="monospace" font-size="11" font-weight="bold">
+      但：C 的 x.acquire 与 y 无关！C 看到 x=true 时，y 可能仍为 false（B 的 ② 尚未执行或不可见）
+    </text>
+  </g>
+  
+  <!-- Execution scenario -->
+  <g transform="translate(50, 525)">
+    <rect x="0" y="0" width="900" height="160" rx="6" fill="#0f3460" stroke="#e94560" stroke-width="2"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">
+      导致 assert 触发的执行时序（两种版本相同）
+    </text>
+    
+    <text x="20" y="55" fill="#ffd93d" font-family="monospace" font-size="11" font-weight="bold">
+      场景：C 看到 x=true, y=false；D 看到 y=true, x=false
+    </text>
+    
+    <text x="40" y="82" fill="#fff" font-family="monospace" font-size="10">
+      T1: A 执行 x.store —— 对 C 可见，但对 D 不一定可见
+    </text>
+    <text x="40" y="105" fill="#fff" font-family="monospace" font-size="10">
+      T2: C 的 x.load 看到 true，跳出 while，但 y.load 看到 false（B 尚未执行或 y 不可见）
+    </text>
+    <text x="40" y="128" fill="#fff" font-family="monospace" font-size="10">
+      T3: B 执行 y.store —— 对 D 可见
+    </text>
+    <text x="40" y="151" fill="#fff" font-family="monospace" font-size="10">
+      T4: D 的 y.load 看到 true，跳出 while，但 x.load 看到 false（A 的 x 对 D 尚未可见）
+    </text>
+    
+    <text x="450" y="175" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold">
+      结果：z = 0，assert 触发！
+    </text>
+  </g>
+  
+  <!-- Bottom: What would work -->
+  <g transform="translate(50, 700)">
+    <rect x="0" y="0" width="900" height="90" rx="6" fill="#0f3460" stroke="#4ecca3" stroke-width="1"/>
+    
+    <text x="450" y="25" text-anchor="middle" fill="#fff" font-family="monospace" font-size="13" font-weight="bold">
+      如何修复？需要 seq_cst 或单个原子变量作为"门"
+    </text>
+    
+    <text x="20" y="55" fill="#4ecca3" font-family="monospace" font-size="10">
+      • 方案 1：全部改用 seq_cst —— 全局全序保证 ① 和 ② 有确定顺序，传递性保证双方可见
+    </text>
+    <text x="20" y="78" fill="#4ecca3" font-family="monospace" font-size="10">
+      • 方案 2：只用单个原子变量（如 x）控制两个线程 —— 所有同步通过同一变量，自然建立顺序
+    </text>
+  </g>
+  
+  <!-- Conclusion -->
+  <g transform="translate(50, 805)">
+    <rect x="0" y="0" width="900" height="35" rx="6" fill="#1a1a1e" stroke="#e94560" stroke-width="1"/>
+    <text x="450" y="22" text-anchor="middle" fill="#e94560" font-family="monospace" font-size="12" font-weight="bold">
+      结论：acquire/release 在此场景下与 relaxed 行为相同，都无法阻止 assert
+    </text>
+  </g>
+</svg>

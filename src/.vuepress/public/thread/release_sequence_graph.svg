@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 950" width="1000" height="950">
+  <defs>
+    <linearGradient id="thread1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4a90d9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#357abd;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="thread2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c0392b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="thread3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#9b59b6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8e44ad;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="guaranteedGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#27ae60;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#229954;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="rmwGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f39c12;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e67e22;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="memoryGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#16a085;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1abc9c;stop-opacity:1" />
+    </linearGradient>
+
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#357abd"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#c0392b"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#8e44ad"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#e67e22"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#229954"/>
+    </marker>
+    <marker id="arrowDashed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#7f8c8d"/>
+    </marker>
+
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <rect width="1000" height="950" fill="#1a1a2e"/>
+
+  <!-- Title -->
+  <text x="500" y="40" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" 
+        font-size="26" font-weight="bold" fill="#ecf0f1">释放序列 (Release Sequence) 执行图</text>
+  <text x="500" y="70" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" 
+        font-size="14" fill="#bdc3c7">为什么 fetch_sub() 不需要 release 语义？</text>
+
+  <!-- Thread Labels -->
+  <rect x="50" y="95" width="280" height="40" rx="8" fill="url(#thread1Grad)" filter="url(#shadow)"/>
+  <text x="190" y="122" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="15" font-weight="bold" fill="white">Thread A (populate_queue)</text>
+
+  <rect x="360" y="95" width="280" height="40" rx="8" fill="url(#thread2Grad)" filter="url(#shadow)"/>
+  <text x="500" y="122" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="15" font-weight="bold" fill="white">Thread B (consume_queue_items)</text>
+
+  <rect x="670" y="95" width="280" height="40" rx="8" fill="url(#thread3Grad)" filter="url(#shadow)"/>
+  <text x="810" y="122" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="15" font-weight="bold" fill="white">Thread C (consume_queue_items)</text>
+
+  <!-- Thread A Operations -->
+  <rect x="50" y="155" width="280" height="80" rx="8" fill="#2c3e50" stroke="#4a90d9" stroke-width="2" filter="url(#shadow)"/>
+  <text x="190" y="180" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="12" fill="#ecf0f1">queue_data.push_back(i)</text>
+  <text x="190" y="200" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="12" fill="#ecf0f1">...</text>
+  <text x="190" y="220" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="10" fill="#95a5a6">写入共享数据</text>
+
+  <rect x="50" y="255" width="280" height="80" rx="8" fill="#2c3e50" stroke="#f39c12" stroke-width="4" filter="url(#shadow)"/>
+  <text x="190" y="280" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="13" fill="#f39c12" font-weight="bold">① count.store(20, release)</text>
+  <text x="190" y="305" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="11" fill="#f39c12">memory_order_release</text>
+  <text x="190" y="320" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="10" fill="#f5cba7">释放序列头 (Head)</text>
+
+  <!-- Thread B Operations -->
+  <rect x="360" y="255" width="280" height="80" rx="8" fill="url(#rmwGrad)" stroke="#e67e22" stroke-width="3" filter="url(#shadow)"/>
+  <text x="500" y="280" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="13" fill="white" font-weight="bold">② fetch_sub(1, acquire)</text>
+  <text x="500" y="305" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="11" fill="white">返回 20 → 19</text>
+  <text x="500" y="325" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="10" fill="#fdebd0">RMW操作 - 释放序列的一部分</text>
+
+  <rect x="360" y="355" width="280" height="70" rx="8" fill="url(#guaranteedGrad)" stroke="#27ae60" stroke-width="2" filter="url(#shadow)"/>
+  <text x="500" y="380" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="12" fill="white" font-weight="bold">④ process(queue_data[19])</text>
+  <text x="500" y="405" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="11" fill="#d5f5e3">✓ 安全读取 - 同步保证</text>
+
+  <!-- Thread C Operations -->
+  <rect x="670" y="305" width="280" height="80" rx="8" fill="url(#rmwGrad)" stroke="#e67e22" stroke-width="3" filter="url(#shadow)"/>
+  <text x="810" y="330" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="13" fill="white" font-weight="bold">③ fetch_sub(1, acquire)</text>
+  <text x="810" y="355" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="11" fill="white">返回 19 → 18</text>
+  <text x="810" y="375" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="10" fill="#fdebd0">RMW操作 - 释放序列的一部分</text>
+
+  <rect x="670" y="405" width="280" height="70" rx="8" fill="url(#guaranteedGrad)" stroke="#27ae60" stroke-width="2" filter="url(#shadow)"/>
+  <text x="810" y="430" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="12" fill="white" font-weight="bold">④ process(queue_data[18])</text>
+  <text x="810" y="455" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="11" fill="#d5f5e3">✓ 安全读取 - 同步保证</text>
+
+  <!-- Memory Objects - Moved up to avoid overlap -->
+  <rect x="50" y="500" width="200" height="90" rx="8" fill="url(#memoryGrad)" stroke="#1abc9c" stroke-width="2" filter="url(#shadow)"/>
+  <text x="150" y="530" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="14" fill="white" font-weight="bold">std::vector&lt;int&gt;</text>
+  <text x="150" y="555" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="12" fill="#a3e4d7">queue_data[0..19]</text>
+  <text x="150" y="575" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="10" fill="#a3e4d7">共享数据缓冲区</text>
+
+  <rect x="400" y="500" width="200" height="90" rx="8" fill="#8e44ad" stroke="#9b59b6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="500" y="530" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="14" fill="white" font-weight="bold">std::atomic&lt;int&gt;</text>
+  <text x="500" y="555" text-anchor="middle" font-family="'Consolas', monospace" 
+        font-size="12" fill="#e8daef">count: 20 → 19 → 18...</text>
+  <text x="500" y="575" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="10" fill="#d2b4de">释放序列载体</text>
+
+  <!-- Release Sequence Box - Moved down to avoid overlap -->
+  <rect x="50" y="620" width="900" height="160" rx="8" fill="#2c3e50" stroke="#f39c12" stroke-width="2" filter="url(#shadow)"/>
+  <text x="500" y="650" text-anchor="middle" font-family="'Segoe UI', sans-serif" 
+        font-size="16" fill="#f39c12" font-weight="bold">释放序列 (Release Sequence) - 关键机制</text>
+
+  <text x="70" y="685" font-family="'Consolas', monospace" font-size="12" fill="#ecf0f1">
+    ① store(20, release) —→ ② fetch_sub(1, acquire) —→ ③ fetch_sub(1, acquire) —→ ④ fetch_sub(1, acquire) —→ ...
+  </text>
+  <text x="70" y="715" font-family="'Segoe UI', sans-serif" font-size="12" fill="#bdc3c7">
+    • 序列头(head)必须是 release/acq_rel/seq_cst 存储操作。后续 RMW 操作可以是任意内存序（包括 relaxed），自动成为序列的一部分
+  </text>
+  <text x="70" y="740" font-family="'Segoe UI', sans-serif" font-size="12" fill="#bdc3c7">
+    • 链式同步：只要 acquire-load 读到 release-sequence 中的值，就能与序列头建立 synchronizes-with 关系
+  </text>
+  <text x="70" y="765" font-family="'Consolas', monospace" font-size="12" fill="#27ae60">
+    • 结果：② 和 ③ 的 acquire 都能与 ① 的 release 同步，保证 queue_data 对两个消费者线程都可见
+  </text>
+
+  <!-- Arrows -->
+  <path d="M190 235 L190 255" stroke="#4a90d9" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <text x="205" y="250" font-family="'Segoe UI', sans-serif" font-size="9" fill="#4a90d9">sequenced-before</text>
+
+  <path d="M330 295 Q345 295 360 295" stroke="#f39c12" stroke-width="4" fill="none" marker-end="url(#arrowOrange)"/>
+  <text x="345" y="285" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="10" fill="#f39c12">release</text>
+  <text x="345" y="315" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="9" fill="#f5cba7">sequence</text>
+
+  <path d="M640 345 Q655 345 670 345" stroke="#f39c12" stroke-width="3" fill="none" marker-end="url(#arrowOrange)"/>
+  <text x="655" y="335" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="9" fill="#f39c12">RMW链</text>
+
+  <path d="M190 335 Q275 400 360 390" stroke="#27ae60" stroke-width="2" fill="none" marker-end="url(#arrowGreen)"/>
+  <text x="275" y="375" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="10" fill="#27ae60">synchronizes-with ✓</text>
+
+  <path d="M190 335 Q430 450 670 445" stroke="#27ae60" stroke-width="2" fill="none" marker-end="url(#arrowGreen)"/>
+  <text x="430" y="420" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="10" fill="#27ae60">synchronizes-with ✓</text>
+
+  <path d="M500 335 L500 355" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrowRed)"/>
+  <path d="M810 385 L810 405" stroke="#8e44ad" stroke-width="2" marker-end="url(#arrowPurple)"/>
+
+  <path d="M190 335 Q150 420 150 500" stroke="#1abc9c" stroke-width="2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowGreen)"/>
+  <text x="120" y="420" font-family="'Segoe UI', sans-serif" font-size="9" fill="#1abc9c" transform="rotate(-60 120,420)">happens-before</text>
+
+  <!-- Legend -->
+  <rect x="20" y="790" width="320" height="110" rx="8" fill="#2c3e50" stroke="#34495e" stroke-width="1" opacity="0.95" filter="url(#shadow)"/>
+  <text x="30" y="815" font-family="'Segoe UI', sans-serif" font-size="13" fill="#ecf0f1" font-weight="bold">图例说明</text>
+
+  <line x1="30" y1="835" x2="55" y2="835" stroke="#f39c12" stroke-width="3"/>
+  <text x="65" y="840" font-family="'Segoe UI', sans-serif" font-size="10" fill="#ecf0f1">释放序列 (release sequence)</text>
+
+  <line x1="30" y1="860" x2="55" y2="860" stroke="#27ae60" stroke-width="2"/>
+  <text x="65" y="865" font-family="'Segoe UI', sans-serif" font-size="10" fill="#ecf0f1">synchronizes-with (同步)</text>
+
+  <line x1="30" y1="885" x2="55" y2="885" stroke="#e67e22" stroke-width="2"/>
+  <text x="65" y="890" font-family="'Segoe UI', sans-serif" font-size="10" fill="#ecf0f1">RMW 操作 (读-改-写)</text>
+
+  <!-- Key Insight Box -->
+  <rect x="360" y="790" width="620" height="110" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2" opacity="0.9" filter="url(#shadow)"/>
+  <text x="370" y="815" font-family="'Segoe UI', sans-serif" font-size="14" fill="#bfdbfe" font-weight="bold">核心答案：为什么 fetch_sub() 不需要 release？</text>
+  <text x="370" y="840" font-family="'Segoe UI', sans-serif" font-size="12" fill="#dbeafe">
+    1. <tspan font-weight="bold">释放序列规则</tspan>：RMW 操作自动成为以 release-store 开头的序列的一部分
+  </text>
+  <text x="370" y="865" font-family="'Segoe UI', sans-serif" font-size="12" fill="#dbeafe">
+    2. <tspan font-weight="bold">链式同步</tspan>：只要 acquire-load 读到 release-sequence 中的值，就能与序列头同步
+  </text>
+  <text x="370" y="890" font-family="'Segoe UI', sans-serif" font-size="12" fill="#dbeafe">
+    3. <tspan font-weight="bold">性能优化</tspan>：避免了不必要的 release 语义开销，消费者线程间无需同步
+  </text>
+
+</svg>
