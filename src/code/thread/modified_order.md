@@ -102,4 +102,4 @@ auto v = x.load();
 > 3. 代码执行顺序 ≠ 内存可见顺序（因为 CPU/编译器会乱序执行）
 > 4. 如果程序是定义良好的（没有 UB），那么所有线程看到的写入顺序必须一致。
 > 5. 对于普通变量，必须使用mutex、condition_variable、memory barrier，否则：modification order 对线程不可见，直接UB
-> 6. 对于原子变量，编译器 + CPU 会帮你保证 内存可见性、顺序性（取决于 memory order）、不会UBguan
+> 6. 对于原子变量，编译器 + CPU 会帮你保证 内存可见性、顺序性（取决于 memory order）、不会UB
