@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700">
+  <defs>
+    <linearGradient id="newNodeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#52c41a"/>
+      <stop offset="100%" stop-color="#389e0d"/>
+    </linearGradient>
+    <linearGradient id="existingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#722ed1"/>
+      <stop offset="100%" stop-color="#531dab"/>
+    </linearGradient>
+    <linearGradient id="finalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1890ff"/>
+      <stop offset="100%" stop-color="#096dd9"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arrGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#52c41a"/>
+    </marker>
+    <marker id="arrOrange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fa8c16"/>
+    </marker>
+  </defs>
+  
+  <rect width="900" height="700" fill="#fafafa"/>
+  
+  <!-- 标题 -->
+  <text x="450" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#262626">
+    单线程链表头插法执行流程
+  </text>
+  <text x="450" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#8c8c8c">
+    三步完成：创建节点 → next指向原头节点 → head指向新节点
+  </text>
+  
+  <!-- ========== 步骤1：初始状态 ========== -->
+  <text x="50" y="120" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#cf1322">
+    步骤1：初始状态
+  </text>
+  <text x="50" y="142" font-family="Courier New, monospace" font-size="12" fill="#8c8c8c">
+    // 已有链表：head → [A] → [B] → nullptr
+  </text>
+  
+  <!-- head -->
+  <rect x="80" y="165" width="70" height="36" rx="4" fill="#f5f5f5" stroke="#262626" stroke-width="2"/>
+  <text x="115" y="188" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#262626">head</text>
+  <line x1="150" y1="183" x2="210" y2="183" stroke="#262626" stroke-width="2" marker-end="url(#arr)"/>
+  
+  <!-- 节点A -->
+  <rect x="210" y="160" width="100" height="56" rx="6" fill="url(#existingGrad)" stroke="#531dab" stroke-width="2"/>
+  <text x="260" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="white">数据 A</text>
+  <text x="260" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">next</text>
+  <line x1="310" y1="205" x2="370" y2="205" stroke="#262626" stroke-width="2" marker-end="url(#arr)"/>
+  
+  <!-- 节点B -->
+  <rect x="370" y="160" width="100" height="56" rx="6" fill="url(#existingGrad)" stroke="#531dab" stroke-width="2"/>
+  <text x="420" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="white">数据 B</text>
+  <text x="420" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">next</text>
+  <line x1="470" y1="205" x2="530" y2="205" stroke="#262626" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="540" y="210" font-family="Arial, sans-serif" font-size="13" fill="#bfbfbf" font-style="italic">nullptr</text>
+  
+  <!-- ========== 步骤2：创建新节点 ========== -->
+  <text x="50" y="290" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#cf1322">
+    步骤2：创建新节点
+  </text>
+  <text x="50" y="312" font-family="Courier New, monospace" font-size="12" fill="#389e0d">
+    node* new_node = new node{data};
+  </text>
+  
+  <!-- head（示意） -->
+  <rect x="80" y="335" width="70" height="36" rx="4" fill="#f5f5f5" stroke="#262626" stroke-width="2"/>
+  <text x="115" y="358" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#262626">head</text>
+  <line x1="150" y1="353" x2="190" y2="353" stroke="#262626" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="200" y="358" font-family="Arial, sans-serif" font-size="12" fill="#bfbfbf">...</text>
+  
+  <!-- 新节点C -->
+  <rect x="380" y="330" width="100" height="56" rx="6" fill="url(#newNodeGrad)" stroke="#389e0d" stroke-width="2"/>
+  <text x="430" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="white">数据 C</text>
+  <text x="430" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">next</text>
+  
+  <text x="300" y="360" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#389e0d">new_node</text>
+  <line x1="365" y1="358" x2="380" y2="358" stroke="#389e0d" stroke-width="2" marker-end="url(#arrGreen)"/>
+  
+  <!-- ========== 步骤3：新节点next指向当前head ========== -->
+  <text x="50" y="440" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#cf1322">
+    步骤3：新节点的next指向当前头节点
+  </text>
+  <text x="50" y="462" font-family="Courier New, monospace" font-size="12" fill="#fa8c16">
+    new_node->next = head;
+  </text>
+  
+  <!-- 新节点C -->
+  <rect x="380" y="480" width="100" height="56" rx="6" fill="url(#newNodeGrad)" stroke="#389e0d" stroke-width="2"/>
+  <text x="430" y="505" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="white">数据 C</text>
+  <text x="430" y="525" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">next</text>
+  
+  <!-- 弧线指向A -->
+  <path d="M 480 525 Q 540 525 540 400 Q 540 220 310 220" stroke="#fa8c16" stroke-width="2.5" fill="none" marker-end="url(#arrOrange)"/>
+  <text x="550" y="370" font-family="Arial, sans-serif" font-size="12" fill="#fa8c16">指向原头节点A</text>
+  
+  <!-- ========== 步骤4：head指向新节点 ========== -->
+  <text x="50" y="590" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#389e0d">
+    步骤4：head指向新节点（插入完成）
+  </text>
+  <text x="50" y="612" font-family="Courier New, monospace" font-size="12" fill="#096dd9">
+    head = new_node;
+  </text>
+  
+  <!-- 最终head -->
+  <rect x="80" y="635" width="70" height="36" rx="4" fill="#d9f7be" stroke="#389e0d" stroke-width="2"/>
+  <text x="115" y="658" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#389e0d">head</text>
+  <line x1="150" y1="653" x2="210" y2="653" stroke="#389e0d" stroke-width="3" marker-end="url(#arrGreen)"/>
+  
+  <!-- 最终节点C（蓝色） -->
+  <rect x="210" y="630" width="100" height="56" rx="6" fill="url(#finalGrad)" stroke="#096dd9" stroke-width="2"/>
+  <text x="260" y="655" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="white">数据 C</text>
+  <text x="260" y="675" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">next</text>
+  <line x1="310" y1="675" x2="370" y2="675" stroke="#262626" stroke-width="2" marker-end="url(#arr)"/>
+  
+  <!-- 节点A -->
+  <rect x="370" y="630" width="100" height="56" rx="6" fill="url(#existingGrad)" stroke="#531dab" stroke-width="2"/>
+  <text x="420" y="655" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="white">数据 A</text>
+  <text x="420" y="675" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">next</text>
+  <line x1="470" y1="675" x2="530" y2="675" stroke="#262626" stroke-width="2" marker-end="url(#arr)"/>
+  
+  <!-- 节点B -->
+  <rect x="530" y="630" width="100" height="56" rx="6" fill="url(#existingGrad)" stroke="#531dab" stroke-width="2"/>
+  <text x="580" y="655" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="white">数据 B</text>
+  <text x="580" y="675" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">next</text>
+  <line x1="630" y1="675" x2="690" y2="675" stroke="#262626" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="700" y="680" font-family="Arial, sans-serif" font-size="13" fill="#bfbfbf" font-style="italic">nullptr</text>
+  
+  <!-- 右侧说明框 -->
+  <rect x="650" y="120" width="220" height="160" rx="8" fill="#f6ffed" stroke="#b7eb8f" stroke-width="1"/>
+  <text x="665" y="145" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#135200">
+    单线程特点
+  </text>
+  <text x="665" y="170" font-family="Arial, sans-serif" font-size="11" fill="#135200">
+    • 无竞争条件
+  </text>
+  <text x="665" y="192" font-family="Arial, sans-serif" font-size="11" fill="#135200">
+    • 无需原子操作
+  </text>
+  <text x="665" y="214" font-family="Arial, sans-serif" font-size="11" fill="#135200">
+    • 直接修改指针
+  </text>
+  <text x="665" y="236" font-family="Arial, sans-serif" font-size="11" fill="#135200">
+    • 无while循环重试
+  </text>
+  <text x="665" y="258" font-family="Arial, sans-serif" font-size="11" fill="#135200">
+    • 操作简单，三步完成
+  </text>
+  
+  <!-- 对比框 -->
+  <rect x="650" y="300" width="220" height="140" rx="8" fill="#fff7e6" stroke="#ffd591" stroke-width="1"/>
+  <text x="665" y="325" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#873800">
+    vs 多线程无锁栈
+  </text>
+  <text x="665" y="350" font-family="Arial, sans-serif" font-size="11" fill="#873800">
+    • 需要CAS原子操作
+  </text>
+  <text x="665" y="372" font-family="Arial, sans-serif" font-size="11" fill="#873800">
+    • 需要while循环重试
+  </text>
+  <text x="665" y="394" font-family="Arial, sans-serif" font-size="11" fill="#873800">
+    • compare_exchange_weak
+  </text>
+  <text x="665" y="416" font-family="Arial, sans-serif" font-size="11" fill="#873800">
+    • 处理ABA问题
+  </text>
+</svg>

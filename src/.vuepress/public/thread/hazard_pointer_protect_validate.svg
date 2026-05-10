@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1200" width="1300" height="1200">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#b91c1c"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad5" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#ef4444"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowYellow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#8b5cf6"/>
+    </marker>
+  </defs>
+
+  <rect width="1300" height="1200" fill="url(#bgGrad)"/>
+
+  <text x="650" y="40" text-anchor="middle" fill="#f1f5f9" font-size="24" font-weight="bold" font-family="Consolas, monospace">Hazard Pointer Protect-Validate 循环详解</text>
+  <text x="650" y="65" text-anchor="middle" fill="#94a3b8" font-size="14" font-family="Consolas, monospace">pop() 中 while 循环的必要性 —— 防止 use-after-free 的时序竞争</text>
+
+  <!-- ======== 代码块 ======== -->
+  <g transform="translate(50, 85)">
+    <rect x="0" y="0" width="600" height="170" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="20" y="25" fill="#60a5fa" font-size="13" font-family="Consolas, monospace">std::shared_ptr&lt;T&gt; pop() {</text>
+    <text x="20" y="48" fill="#60a5fa" font-size="13" font-family="Consolas, monospace">  std::atomic&lt;void*&gt; &amp;hp = get_hazard_pointer_for_current_thread();</text>
+    <text x="20" y="71" fill="#fbbf24" font-size="13" font-family="Consolas, monospace">  node *old_head = head.load();    // ① 第一次读取 head</text>
+    <text x="20" y="94" fill="#e2e8f0" font-size="13" font-family="Consolas, monospace">  node *temp;</text>
+    <text x="20" y="117" fill="#e2e8f0" font-size="13" font-family="Consolas, monospace">  do {</text>
+    <text x="20" y="140" fill="#fbbf24" font-size="13" font-family="Consolas, monospace">    temp = old_head;</text>
+    <text x="20" y="163" fill="#ef4444" font-size="13" font-family="Consolas, monospace">    hp.store(old_head);            // ② 写入 Hazard Pointer</text>
+    <text x="20" y="186" fill="#fbbf24" font-size="13" font-family="Consolas, monospace">    old_head = head.load();        // 再次读取 head</text>
+    <text x="20" y="209" fill="#e2e8f0" font-size="13" font-family="Consolas, monospace">  } while (old_head != temp);      // ③ 验证一致性</text>
+    <text x="20" y="232" fill="#e2e8f0" font-size="13" font-family="Consolas, monospace">  // ... 此时可以安全访问 old_head</text>
+    <text x="20" y="255" fill="#60a5fa" font-size="13" font-family="Consolas, monospace">}</text>
+  </g>
+
+  <!-- ======== 为什么需要循环 ======== -->
+  <g transform="translate(680, 85)">
+    <rect x="0" y="0" width="570" height="255" rx="10" fill="#450a0a" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="20" y="25" fill="#f87171" font-size="14" font-weight="bold" font-family="Consolas, monospace">为什么必须有 while 循环？</text>
+    <text x="20" y="52" fill="#fca5a5" font-size="12" font-family="Consolas, monospace">问题：在 ① 读取 head 和 ② 写入 HP 之间，</text>
+    <text x="20" y="74" fill="#fca5a5" font-size="12" font-family="Consolas, monospace">其他线程可能已经 pop 并删除了该节点！</text>
+    <text x="20" y="110" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">场景：T1 执行 ① 读到 Node A (0xA000)，</text>
+    <text x="20" y="132" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">      此时 T2 抢先 pop 了 Node A 并 delete 它。</text>
+    <text x="20" y="154" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">      T1 接着执行 ② hp.store(0xA000)，</text>
+    <text x="20" y="176" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">      但 Node A 已经被释放了！</text>
+    <text x="20" y="212" fill="#34d399" font-size="12" font-family="Consolas, monospace">解决：③ 再次读取 head，如果 head 变了，</text>
+    <text x="20" y="234" fill="#34d399" font-size="12" font-family="Consolas, monospace">      说明节点已被删除，必须重新循环保护新节点。</text>
+  </g>
+
+  <!-- ======== 时序图 ======== -->
+  <text x="650" y="370" text-anchor="middle" fill="#f1f5f9" font-size="16" font-weight="bold" font-family="Consolas, monospace">并发时序图：T1 保护 Node A 时，T2 抢先删除</text>
+
+  <!-- 时间轴 -->
+  <line x1="100" y1="400" x2="1200" y2="400" stroke="#475569" stroke-width="2"/>
+  <text x="80" y="405" text-anchor="end" fill="#94a3b8" font-size="12" font-family="Consolas, monospace">时间 →</text>
+
+  <!-- T1 时间线 -->
+  <g transform="translate(100, 420)">
+    <rect x="0" y="0" width="80" height="30" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+    <text x="40" y="21" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="Consolas, monospace">Thread T1</text>
+  </g>
+
+  <!-- T1 事件 -->
+  <g transform="translate(200, 420)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="#451a03" font-size="11" font-weight="bold" font-family="Consolas, monospace">① head.load()</text>
+    <text x="70" y="28" text-anchor="middle" fill="#78350f" font-size="10" font-family="Consolas, monospace">读到 Node A</text>
+  </g>
+
+  <!-- T2 插入事件 -->
+  <g transform="translate(370, 420)">
+    <rect x="0" y="0" width="160" height="35" rx="6" fill="#ef4444" stroke="#b91c1c" stroke-width="2"/>
+    <text x="80" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">⚠ T2 pop Node A</text>
+    <text x="80" y="28" text-anchor="middle" fill="#fecaca" font-size="10" font-family="Consolas, monospace">head → Node B</text>
+  </g>
+
+  <!-- T1 继续 -->
+  <g transform="translate(560, 420)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#ef4444" stroke="#b91c1c" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">② hp.store(A)</text>
+    <text x="70" y="28" text-anchor="middle" fill="#fecaca" font-size="10" font-family="Consolas, monospace">危险！A 已删除</text>
+  </g>
+
+  <g transform="translate(730, 420)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="#451a03" font-size="11" font-weight="bold" font-family="Consolas, monospace">head.load()</text>
+    <text x="70" y="28" text-anchor="middle" fill="#78350f" font-size="10" font-family="Consolas, monospace">读到 Node B</text>
+  </g>
+
+  <g transform="translate(900, 420)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#f59e0b" stroke="#b45309" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">③ A != B</text>
+    <text x="70" y="28" text-anchor="middle" fill="#fef3c7" font-size="10" font-family="Consolas, monospace">循环重试！</text>
+  </g>
+
+  <!-- T2 时间线 -->
+  <g transform="translate(100, 480)">
+    <rect x="0" y="0" width="80" height="30" rx="6" fill="#451a03" stroke="#f59e0b" stroke-width="2"/>
+    <text x="40" y="21" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="bold" font-family="Consolas, monospace">Thread T2</text>
+  </g>
+
+  <g transform="translate(370, 480)">
+    <rect x="0" y="0" width="160" height="35" rx="6" fill="#8b5cf6" stroke="#5b21b6" stroke-width="2"/>
+    <text x="80" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">CAS head: A→B</text>
+    <text x="80" y="28" text-anchor="middle" fill="#ddd6fe" font-size="10" font-family="Consolas, monospace">成功摘除 A</text>
+  </g>
+
+  <g transform="translate(560, 480)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#ef4444" stroke="#b91c1c" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">delete Node A</text>
+    <text x="70" y="28" text-anchor="middle" fill="#fecaca" font-size="10" font-family="Consolas, monospace">内存已释放</text>
+  </g>
+
+  <!-- 连接线 -->
+  <line x1="270" y1="437" x2="370" y2="437" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="530" y1="437" x2="560" y2="437" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="700" y1="437" x2="730" y2="437" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="870" y1="437" x2="900" y2="437" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- ======== 成功时序 ======== -->
+  <text x="650" y="550" text-anchor="middle" fill="#f1f5f9" font-size="16" font-weight="bold" font-family="Consolas, monospace">成功时序：T1 循环后正确保护 Node B</text>
+
+  <line x1="100" y1="580" x2="1200" y2="580" stroke="#475569" stroke-width="2"/>
+
+  <g transform="translate(100, 600)">
+    <rect x="0" y="0" width="80" height="30" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+    <text x="40" y="21" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="Consolas, monospace">Thread T1</text>
+  </g>
+
+  <!-- 第二次循环 -->
+  <g transform="translate(200, 600)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="#451a03" font-size="11" font-weight="bold" font-family="Consolas, monospace">temp = B</text>
+    <text x="70" y="28" text-anchor="middle" fill="#78350f" font-size="10" font-family="Consolas, monospace">记录当前 head</text>
+  </g>
+
+  <g transform="translate(370, 600)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#10b981" stroke="#047857" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">② hp.store(B)</text>
+    <text x="70" y="28" text-anchor="middle" fill="#a7f3d0" font-size="10" font-family="Consolas, monospace">保护 Node B</text>
+  </g>
+
+  <g transform="translate(540, 600)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#10b981" stroke="#047857" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">head.load()</text>
+    <text x="70" y="28" text-anchor="middle" fill="#a7f3d0" font-size="10" font-family="Consolas, monospace">读到 Node B</text>
+  </g>
+
+  <g transform="translate(710, 600)">
+    <rect x="0" y="0" width="140" height="35" rx="6" fill="#064e3b" stroke="#10b981" stroke-width="2"/>
+    <text x="70" y="14" text-anchor="middle" fill="#34d399" font-size="11" font-weight="bold" font-family="Consolas, monospace">③ B == B ✓</text>
+    <text x="70" y="28" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="Consolas, monospace">验证通过！</text>
+  </g>
+
+  <g transform="translate(880, 600)">
+    <rect x="0" y="0" width="180" height="35" rx="6" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
+    <text x="90" y="14" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Consolas, monospace">安全访问 old_head</text>
+    <text x="90" y="28" text-anchor="middle" fill="#bfdbfe" font-size="10" font-family="Consolas, monospace">CAS 摘除 B</text>
+  </g>
+
+  <!-- HP 保护示意 -->
+  <g transform="translate(200, 660)">
+    <rect x="0" y="0" width="1200" height="80" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="20" y="25" fill="#fbbf24" font-size="13" font-weight="bold" font-family="Consolas, monospace">HP 保护生效后的状态</text>
+
+    <rect x="20" y="35" width="130" height="35" rx="6" fill="url(#nodeGrad2)" filter="url(#shadow)"/>
+    <text x="85" y="52" text-anchor="middle" fill="white" font-size="11" font-family="Consolas, monospace">Node B (head)</text>
+    <text x="85" y="66" text-anchor="middle" fill="#a7f3d0" font-size="9" font-family="Consolas, monospace">addr: 0xB000</text>
+    <circle cx="135" cy="42" r="7" fill="#ef4444" stroke="white" stroke-width="1"/>
+    <text x="135" y="46" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="Consolas, monospace">HP</text>
+
+    <line x1="155" y1="52" x2="200" y2="52" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="210" y="35" width="130" height="35" rx="6" fill="url(#nodeGrad3)" filter="url(#shadow)"/>
+    <text x="275" y="52" text-anchor="middle" fill="white" font-size="11" font-family="Consolas, monospace">Node C</text>
+    <text x="275" y="66" text-anchor="middle" fill="#fde68a" font-size="9" font-family="Consolas, monospace">addr: 0xC000</text>
+    <line x1="340" y1="52" x2="385" y2="52" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="395" y="35" width="130" height="35" rx="6" fill="url(#nodeGrad5)" filter="url(#shadow)"/>
+    <text x="460" y="52" text-anchor="middle" fill="white" font-size="11" font-family="Consolas, monospace">Node D</text>
+    <text x="460" y="66" text-anchor="middle" fill="#ddd6fe" font-size="9" font-family="Consolas, monospace">nullptr</text>
+
+    <text x="560" y="55" fill="#34d399" font-size="12" font-family="Consolas, monospace">✓ T1 的 HP 已保护 Node B，其他线程 scan() 时看到 0xB000 在 HP 中，不会 delete</text>
+  </g>
+
+  <!-- ======== 关键洞察 ======== -->
+  <line x1="50" y1="760" x2="1250" y2="760" stroke="#334155" stroke-width="1" stroke-dasharray="5,5"/>
+
+  <text x="650" y="785" text-anchor="middle" fill="#f1f5f9" font-size="16" font-weight="bold" font-family="Consolas, monospace">关键洞察：为什么 head 变化意味着节点已删除？</text>
+
+  <g transform="translate(80, 810)">
+    <rect x="0" y="0" width="550" height="140" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+    <text x="20" y="25" fill="#60a5fa" font-size="13" font-weight="bold" font-family="Consolas, monospace">栈的语义保证</text>
+    <text x="20" y="50" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">在无锁栈中，head 指针的变化只有一种原因：</text>
+    <text x="20" y="75" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">  • push(): head 指向新节点（原节点不变，只是新增）</text>
+    <text x="20" y="97" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">  • pop():  head 指向 next 节点（原 head 节点被摘除）</text>
+    <text x="20" y="125" fill="#93c5fd" font-size="12" font-family="Consolas, monospace">因此：如果 head 从 A 变成了 B，说明 A 已经被 pop 并进入 retired 状态，</text>
+    <text x="20" y="145" fill="#93c5fd" font-size="12" font-family="Consolas, monospace">      可能随时被 delete。T1 必须重新保护新的 head。</text>
+  </g>
+
+  <g transform="translate(660, 810)">
+    <rect x="0" y="0" width="550" height="140" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+    <text x="20" y="25" fill="#fbbf24" font-size="13" font-weight="bold" font-family="Consolas, monospace">Validate 的双重含义</text>
+    <text x="20" y="50" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">① 验证节点是否仍存在于数据结构中</text>
+    <text x="20" y="72" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">   → head 没变，说明节点仍是 head，未被摘除</text>
+    <text x="20" y="100" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">② 验证 HP 写入的是有效地址</text>
+    <text x="20" y="122" fill="#e2e8f0" font-size="12" font-family="Consolas, monospace">   → 如果 head 变了，old_head 可能已 free，HP 指向悬空指针</text>
+    <text x="20" y="145" fill="#fde68a" font-size="12" font-family="Consolas, monospace">   → 循环重试，直到 HP 和保护目标一致</text>
+  </g>
+
+  <!-- ======== 内存分配器警告 ======== -->
+  <g transform="translate(80, 970)">
+    <rect x="0" y="0" width="1130" height="90" rx="10" fill="#450a0a" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="20" y="25" fill="#f87171" font-size="14" font-weight="bold" font-family="Consolas, monospace">⚠ 内存分配器警告</text>
+    <text x="20" y="50" fill="#fca5a5" font-size="12" font-family="Consolas, monospace">书中提到："使用默认的 new 和 delete 操作对风险指针进行操作时，会出现未定义行为"</text>
+    <text x="20" y="72" fill="#fca5a5" font-size="12" font-family="Consolas, monospace">原因：HP 中存储的是裸指针地址，如果 delete 后该地址被 new 复用，其他线程的 HP 会错误地"保护"新对象。</text>
+    <text x="20" y="94" fill="#fca5a5" font-size="12" font-family="Consolas, monospace">解决：使用自定义内存分配器（如内存池），确保 retired 节点地址在 scan 回收前不会被复用。</text>
+  </g>
+
+  <!-- 底部引用 -->
+  <text x="650" y="1090" text-anchor="middle" fill="#64748b" font-size="12" font-family="Consolas, monospace">
+    参考: C++ Concurrency in Action, 2nd Ed. — Chapter 7.2.4 Hazard Pointers
+  </text>
+  <text x="650" y="1110" text-anchor="middle" fill="#64748b" font-size="12" font-family="Consolas, monospace">
+    核心模式: Protect → Validate → Access → Clear，Validate 通过重读共享状态并比较实现
+  </text>
+</svg>

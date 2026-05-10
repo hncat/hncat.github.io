@@ -564,7 +564,7 @@ void f() {
 
 #### 3.3 "释放序列"与"同步"
 > [!important]
-> 你可以在存储一个原子变量和另一个加载这个原子变量的线程之间获得一个“同步于”关系，即使有一系列的“读-改-写”操作在存储和加载之间，只要所有操作都被适当标记就没问题。当存储操作被标记为memory_order_release，memory_order_acq_rel或memory_order_seq_cst，加载被标记为memory_order_consume，memory_order_acquire或memory_order_ord_seq_cst，并且操作链上的每个操作加载的是由前面的操作写入的，那么操作链就构成了一个释放序列(release sequence)，并且最初的存储“同步于”(对应memory_order_acquire或memory_order_seq_cst)或是“依赖先序于”(对应memory_order_consume)最终的加载。操作链上的任何原子“读-改-写”操作可以拥有任意的内存顺序(甚至时memory_order_relaxed)。
+> 你可以在存储一个原子变量和另一个加载这个原子变量的线程之间获得一个“同步于”关系，即使有一系列的“读-改-写”操作在存储和加载之间，只要所有操作都被适当标记就没问题。当存储操作被标记为memory_order_release，memory_order_acq_rel或memory_order_seq_cst，加载被标记为memory_order_consume，memory_order_acquire或memory_order_ord_seq_cst，并且操作链上的每个操作加载的是由前面的操作写入的，那么操作链就构成了一个释放序列(release sequence)，并且最初的存储“同步于”(对应memory_order_acquire或memory_order_seq_cst)或是“依赖先序于”(对应memory_order_consume)最终的加载。操作链上的任何原子“读-改-写”操作可以拥有任意的内存顺序(甚至是memory_order_relaxed)。
 
 <a id="code-example-10">代码清单10 使用原子操作从队列中读取值</a>
 

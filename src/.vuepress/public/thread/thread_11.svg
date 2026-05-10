@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="750" viewBox="0 0 1000 750">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a90e2"/>
+      <stop offset="100%" stop-color="#357abd"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7ed321"/>
+      <stop offset="100%" stop-color="#5fa91f"/>
+    </linearGradient>
+  </defs>
+  
+  <rect width="1000" height="750" fill="#fafafa"/>
+  
+  <text x="500" y="30" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" font-weight="bold" fill="#2c3e50">无锁栈 Push 操作执行流程 (Treiber Stack)</text>
+  <text x="500" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#666">compare_exchange_weak CAS 循环机制</text>
+  
+  <!-- Step 1 -->
+  <text x="30" y="90" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#c0392b">步骤1: 初始状态 - head 指向 nullptr</text>
+  <rect x="80" y="105" width="55" height="28" rx="3" fill="#eee" stroke="#333" stroke-width="2"/>
+  <text x="107" y="124" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold">head</text>
+  <line x1="135" y1="119" x2="190" y2="119" stroke="#333" stroke-width="2"/>
+  <polygon points="190,119 182,114 182,124" fill="#333"/>
+  <text x="198" y="124" font-family="Arial,sans-serif" font-size="11" fill="#999" font-style="italic">nullptr</text>
+  
+  <!-- Step 2 -->
+  <text x="30" y="170" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#c0392b">步骤2: 创建新节点</text>
+  <text x="30" y="188" font-family="monospace" font-size="10" fill="#27ae60">node* new_node = new node{data};</text>
+  
+  <rect x="350" y="165" width="90" height="55" rx="5" fill="url(#g2)" stroke="#27ae60" stroke-width="2"/>
+  <text x="395" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white">数据</text>
+  <text x="395" y="208" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="white">next</text>
+  
+  <text x="270" y="195" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#27ae60">new_node</text>
+  <line x1="330" y1="192" x2="350" y2="192" stroke="#27ae60" stroke-width="2"/>
+  <polygon points="350,192 342,187 342,197" fill="#27ae60"/>
+  
+  <!-- Step 3 -->
+  <text x="30" y="270" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#c0392b">步骤3: 设置 next 指向当前 head (快照)</text>
+  <text x="30" y="288" font-family="monospace" font-size="10" fill="#e67e22">new_node-&gt;next = head.load();</text>
+  
+  <rect x="350" y="275" width="90" height="55" rx="5" fill="url(#g2)" stroke="#27ae60" stroke-width="2"/>
+  <text x="395" y="300" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white">数据</text>
+  <text x="395" y="318" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="white">next</text>
+  
+  <path d="M 440 318 Q 470 318 470 240 Q 470 140 190 140" stroke="#e67e22" stroke-width="2" fill="none" stroke-dasharray="4,2"/>
+  <polygon points="190,140 198,135 198,145" fill="#e67e22"/>
+  <text x="480" y="230" font-family="Arial,sans-serif" font-size="10" fill="#e67e22">读取快照</text>
+  
+  <rect x="80" y="200" width="55" height="28" rx="3" fill="#eee" stroke="#333" stroke-width="2"/>
+  <text x="107" y="219" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold">head</text>
+  <line x1="135" y1="214" x2="180" y2="214" stroke="#333" stroke-width="2"/>
+  <polygon points="180,214 172,209 172,219" fill="#333"/>
+  <text x="188" y="219" font-family="Arial,sans-serif" font-size="11" fill="#999" font-style="italic">nullptr</text>
+  
+  <!-- Step 4 -->
+  <text x="30" y="400" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#c0392b">步骤4: CAS 原子比较交换</text>
+  <text x="30" y="418" font-family="monospace" font-size="10" fill="#8e44ad">while (!head.compare_exchange_weak(expected, new_node));</text>
+  
+  <rect x="30" y="435" width="420" height="90" rx="6" fill="#fff9e6" stroke="#f39c12" stroke-width="2"/>
+  <text x="45" y="458" font-family="monospace" font-size="10" fill="#856404">// 原子操作:</text>
+  <text x="45" y="480" font-family="monospace" font-size="10" fill="#856404">if (head == expected)      // 比较 head 是否未变?</text>
+  <text x="45" y="502" font-family="monospace" font-size="10" fill="#856404">    head = new_node;        // 成功: 更新 head</text>
+  <text x="45" y="520" font-family="monospace" font-size="10" fill="#856404">else expected = head;       // 失败: 自动更新, 重试</text>
+  
+  <text x="470" y="475" font-family="Arial,sans-serif" font-size="12" fill="#27ae60" font-weight="bold">✓ CAS 成功</text>
+  <text x="470" y="493" font-family="Arial,sans-serif" font-size="10" fill="#27ae60">head 原子性更新</text>
+  
+  <!-- Result -->
+  <text x="30" y="570" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#27ae60">结果: 新节点成为栈顶</text>
+  
+  <rect x="80" y="590" width="55" height="28" rx="3" fill="#d5f4e6" stroke="#27ae60" stroke-width="2"/>
+  <text x="107" y="609" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#27ae60">head</text>
+  <line x1="135" y1="604" x2="200" y2="604" stroke="#27ae60" stroke-width="3"/>
+  <polygon points="200,604 192,599 192,609" fill="#27ae60"/>
+  
+  <rect x="200" y="580" width="90" height="55" rx="5" fill="url(#g1)" stroke="#357abd" stroke-width="2"/>
+  <text x="245" y="605" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white">数据</text>
+  <text x="245" y="623" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="white">next</text>
+  
+  <line x1="290" y1="623" x2="335" y2="623" stroke="#333" stroke-width="2"/>
+  <polygon points="335,623 327,618 327,628" fill="#333"/>
+  <text x="343" y="628" font-family="Arial,sans-serif" font-size="11" fill="#999" font-style="italic">nullptr</text>
+  
+  <!-- Right side: Concurrent -->
+  <text x="550" y="90" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#c0392b">并发冲突场景</text>
+  
+  <rect x="550" y="105" width="420" height="260" rx="6" fill="#fdeaea" stroke="#e74c3c" stroke-width="1"/>
+  
+  <text x="565" y="130" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#721c24">线程 A (当前线程)</text>
+  <text x="565" y="152" font-family="monospace" font-size="9" fill="#721c24">1. expected = head.load()       // 读取旧值</text>
+  <text x="565" y="170" font-family="monospace" font-size="9" fill="#721c24">2. new_node-&gt;next = expected  // 设置 next</text>
+  <text x="565" y="188" font-family="monospace" font-size="9" fill="#721c24">3. CAS(head, expected, new_node) // 尝试更新</text>
+  
+  <text x="565" y="220" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#721c24">线程 B (干扰线程)</text>
+  <text x="565" y="242" font-family="Arial,sans-serif" font-size="9" fill="#721c24">[在 A 的步骤 2-3 之间执行]</text>
+  <text x="565" y="260" font-family="monospace" font-size="9" fill="#721c24">push(another_node) 完成, head 被修改!</text>
+  
+  <text x="565" y="290" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#721c24">CAS 失败处理</text>
+  <text x="565" y="312" font-family="Arial,sans-serif" font-size="9" fill="#721c24">• head != expected (B 已修改 head)</text>
+  <text x="565" y="330" font-family="Arial,sans-serif" font-size="9" fill="#721c24">• expected 自动更新为当前 head 值</text>
+  <text x="565" y="348" font-family="Arial,sans-serif" font-size="9" fill="#721c24">• while 循环使用新值重试</text>
+  
+  <!-- Why weak -->
+  <rect x="550" y="385" width="420" height="130" rx="6" fill="#e8f6f3" stroke="#1abc9c" stroke-width="1"/>
+  <text x="565" y="410" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0c5460">为什么使用 compare_exchange_weak?</text>
+  <text x="565" y="435" font-family="Arial,sans-serif" font-size="10" fill="#0c5460">• 允许"伪失败"(spurious failure), 性能更优</text>
+  <text x="565" y="455" font-family="Arial,sans-serif" font-size="10" fill="#0c5460">• 失败时自动更新第1个参数 (expected)</text>
+  <text x="565" y="475" font-family="Arial,sans-serif" font-size="10" fill="#0c5460">• 循环内无需手动重新加载 head 指针</text>
+  <text x="565" y="495" font-family="Arial,sans-serif" font-size="10" fill="#0c5460">• 专为循环重试场景优化设计</text>
+  
+  <text x="500" y="730" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#666">
+    内存序: 顺序一致性保证线程间数据可见 | ABA安全: 指针地址唯一性
+  </text>
+</svg>
