@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1100" height="900" viewBox="0 0 1100 900">
+  <defs>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1890ff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#096dd9;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="newNodeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#52c41a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#389e0d;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="delGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff4d4f;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#cf1322;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="spGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#faad14;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#d48806;stop-opacity:1"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" style="fill:#333"/>
+    </marker>
+    <marker id="arrGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" style="fill:#52c41a"/>
+    </marker>
+    <marker id="arrRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" style="fill:#ff4d4f"/>
+    </marker>
+    <marker id="arrOrange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" style="fill:#fa8c16"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="900" style="fill:#fafafa"/>
+  <!-- 标题 -->
+  <text x="550" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" style="fill:#262626">
+    无锁栈（Lock-Free Stack）完整实现 - shared_ptr版本
+  </text>
+  <text x="550" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" style="fill:#8c8c8c">
+    无锁但非无等待（push/pop均有while循环）
+  </text>
+  <text x="50" y="90" font-family="Arial, sans-serif" font-size="16" font-weight="bold" style="fill:#1890ff">
+    Push操作
+  </text>
+  <text x="50" y="115" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    1. 创建新节点（堆分配）
+  </text>
+  <text x="50" y="135" font-family="Courier New, monospace" font-size="10" style="fill:#389e0d">
+    const node* new_node = new node{data};
+  </text>
+  <rect x="50" y="150" width="280" height="110" rx="6" style="fill:#fff7e6;stroke:#ffd591;stroke-width:1"/>
+  <text x="65" y="170" font-family="Arial, sans-serif" font-size="11" font-weight="bold" style="fill:#873800">
+    node结构（堆上分配）：
+  </text>
+  <text x="65" y="190" font-family="Courier New, monospace" font-size="9" style="fill:#873800">
+    struct node {
+  </text>
+  <text x="65" y="205" font-family="Courier New, monospace" font-size="9" style="fill:#873800">
+    shared_ptr&lt;T&gt; data;  // ① 指向堆数据的智能指针
+  </text>
+  <text x="65" y="220" font-family="Courier New, monospace" font-size="9" style="fill:#873800">
+    node* next;           // 裸指针，链表链接
+  </text>
+  <text x="65" y="235" font-family="Courier New, monospace" font-size="9" style="fill:#873800">
+    };
+  </text>
+  <text x="65" y="250" font-family="Courier New, monospace" font-size="9" style="fill:#cf1322">
+    // ② make_shared&lt;T&gt;(data_) 堆分配T
+  </text>
+  <rect x="360" y="155" width="120" height="80" rx="6" style="fill:url(#newNodeGrad);stroke:#389e0d;stroke-width:2"/>
+  <text x="420" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:white">node</text>
+  <text x="420" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" style="fill:white">shared_ptr</text>
+  <text x="420" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" style="fill:white">next</text>
+  <line x1="420" y1="200" x2="420" y2="120" style="stroke:#faad14;stroke-width:2;marker-end:url(#arrOrange)"/>
+  <rect x="380" y="90" width="80" height="30" rx="4" style="fill:url(#spGrad);stroke:#d48806;stroke-width:2"/>
+  <text x="420" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" style="fill:white">T data</text>
+  <text x="450" y="145" font-family="Arial, sans-serif" font-size="10" style="fill:#d48806">堆分配</text>
+  <text x="50" y="290" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    2. 设置next指向当前head
+  </text>
+  <text x="50" y="310" font-family="Courier New, monospace" font-size="10" style="fill:#e67e22">
+    new_node-&gt;next = head.load();
+  </text>
+  <text x="50" y="340" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    3. CAS原子更新head
+  </text>
+  <text x="50" y="360" font-family="Courier New, monospace" font-size="10" style="fill:#8e44ad">
+    while (!head.compare_exchange_weak(new_node-&gt;next, new_node));
+  </text>
+  <rect x="50" y="375" width="400" height="70" rx="6" style="fill:#f9f0ff;stroke:#d3adf7;stroke-width:1"/>
+  <text x="65" y="395" font-family="Courier New, monospace" font-size="9" style="fill:#531dab">
+    // 失败时自动更新new_node-&gt;next
+  </text>
+  <text x="65" y="412" font-family="Courier New, monospace" font-size="9" style="fill:#531dab">
+    // 循环直到成功（无锁但非无等待）
+  </text>
+  <text x="65" y="432" font-family="Courier New, monospace" font-size="9" style="fill:#531dab">
+    // 可能持续失败（高竞争时）
+  </text>
+  <text x="550" y="90" font-family="Arial, sans-serif" font-size="16" font-weight="bold" style="fill:#1890ff">
+    Pop操作
+  </text>
+  <text x="550" y="115" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    1. 读取当前head
+  </text>
+  <text x="550" y="135" font-family="Courier New, monospace" font-size="10" style="fill:#096dd9">
+    node* old_head = head.load();
+  </text>
+  <text x="550" y="165" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    2. 检查old_head是否为空 ③
+  </text>
+  <text x="550" y="185" font-family="Courier New, monospace" font-size="10" style="fill:#096dd9">
+    while (old_head &amp;&amp; ...)
+  </text>
+  <rect x="550" y="200" width="280" height="60" rx="6" style="fill:#f6ffed;stroke:#b7eb8f;stroke-width:1"/>
+  <text x="565" y="220" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    ✓ old_head != nullptr：栈非空，继续CAS
+  </text>
+  <text x="565" y="240" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    ✗ old_head == nullptr：栈为空，返回空shared_ptr
+  </text>
+  <text x="565" y="255" font-family="Courier New, monospace" font-size="9" style="fill:#135200">
+    return std::shared_ptr&lt;T&gt;(); // ④ 空指针
+  </text>
+  <text x="550" y="290" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    3. CAS移动head到next
+  </text>
+  <text x="550" y="310" font-family="Courier New, monospace" font-size="10" style="fill:#8e44ad">
+    !head.compare_exchange_weak(old_head, old_head-&gt;next)
+  </text>
+  <rect x="550" y="325" width="400" height="90" rx="6" style="fill:#fff2f0;stroke:#ffccc7;stroke-width:1"/>
+  <text x="565" y="345" font-family="Courier New, monospace" font-size="9" style="fill:#cf1322">
+    // 原子操作：head == old_head ?
+  </text>
+  <text x="565" y="362" font-family="Courier New, monospace" font-size="9" style="fill:#cf1322">
+    // 成功：head = old_head-&gt;next（B成为新头）
+  </text>
+  <text x="565" y="379" font-family="Courier New, monospace" font-size="9" style="fill:#cf1322">
+    // 失败：old_head被更新为当前head，重试
+  </text>
+  <text x="565" y="396" font-family="Courier New, monospace" font-size="9" style="fill:#cf1322">
+    // 关键：先检查old_head非空，再解引用old_head-&gt;next
+  </text>
+  <text x="565" y="413" font-family="Courier New, monospace" font-size="9" style="fill:#cf1322">
+    // 避免空指针解引用崩溃！
+  </text>
+  <text x="550" y="445" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    4. 返回节点数据 ④
+  </text>
+  <text x="550" y="465" font-family="Courier New, monospace" font-size="10" style="fill:#096dd9">
+    return old_head ? old_head-&gt;data : shared_ptr&lt;T&gt;();
+  </text>
+  <rect x="550" y="480" width="280" height="50" rx="6" style="fill:#e6f7ff;stroke:#91d5ff;stroke-width:1"/>
+  <text x="565" y="500" font-family="Arial, sans-serif" font-size="10" style="fill:#096dd9">
+    返回shared_ptr，引用计数+1
+  </text>
+  <text x="565" y="520" font-family="Arial, sans-serif" font-size="10" style="fill:#096dd9">
+    数据生命周期由调用者管理
+  </text>
+  <text x="50" y="560" font-family="Arial, sans-serif" font-size="16" font-weight="bold" style="fill:#262626">
+    Push/Pop执行时序与内存管理
+  </text>
+  <rect x="50" y="580" width="480" height="140" rx="8" style="fill:#f6ffed;stroke:#b7eb8f;stroke-width:1"/>
+  <text x="65" y="605" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#135200">
+    Push内存流程：
+  </text>
+  <text x="65" y="630" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    1. new node{data} → 堆分配node（含shared_ptr成员）
+  </text>
+  <text x="65" y="650" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    2. make_shared&lt;T&gt;(data_) → 堆分配T，shared_ptr引用计数=1
+  </text>
+  <text x="65" y="670" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    3. CAS成功 → node指针存入atomic&lt;node*&gt; head
+  </text>
+  <text x="65" y="690" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    4. 栈持有node裸指针，node持有shared_ptr（T不被释放）
+  </text>
+  <text x="65" y="710" font-family="Arial, sans-serif" font-size="10" style="fill:#cf1322">
+    注意：node本身由new分配，需手动delete（pop时）
+  </text>
+  <rect x="550" y="580" width="520" height="140" rx="8" style="fill:#fff2f0;stroke:#ffccc7;stroke-width:1"/>
+  <text x="565" y="605" font-family="Arial, sans-serif" font-size="13" font-weight="bold" style="fill:#cf1322">
+    Pop内存流程：
+  </text>
+  <text x="565" y="630" font-family="Arial, sans-serif" font-size="10" style="fill:#cf1322">
+    1. head.load() → 获取头节点指针（裸指针）
+  </text>
+  <text x="565" y="650" font-family="Arial, sans-serif" font-size="10" style="fill:#cf1322">
+    2. CAS成功 → head指向old_head-&gt;next，A脱离链表
+  </text>
+  <text x="565" y="670" font-family="Arial, sans-serif" font-size="10" style="fill:#cf1322">
+    3. 返回old_head-&gt;data（shared_ptr拷贝，T的引用计数+1）
+  </text>
+  <text x="565" y="690" font-family="Arial, sans-serif" font-size="10" style="fill:#cf1322">
+    4. delete old_head → 释放node内存，shared_ptr析构
+  </text>
+  <text x="565" y="710" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    结果：T数据仍存活（由返回的shared_ptr管理），node被释放
+  </text>
+  <text x="50" y="760" font-family="Arial, sans-serif" font-size="16" font-weight="bold" style="fill:#262626">
+    关键特性与注意事项
+  </text>
+  <rect x="50" y="775" width="500" height="110" rx="8" style="fill:#fff7e6;stroke:#ffd591;stroke-width:1"/>
+  <text x="65" y="800" font-family="Arial, sans-serif" font-size="12" font-weight="bold" style="fill:#873800">
+    无锁但非无等待（Lock-Free but Not Wait-Free）：
+  </text>
+  <text x="65" y="825" font-family="Arial, sans-serif" font-size="10" style="fill:#873800">
+    • push()和pop()都有while循环，compare_exchange_weak可能持续失败
+  </text>
+  <text x="65" y="845" font-family="Arial, sans-serif" font-size="10" style="fill:#873800">
+    • 高竞争场景下，线程可能"饥饿"（一直重试）
+  </text>
+  <text x="65" y="865" font-family="Arial, sans-serif" font-size="10" style="fill:#873800">
+    • 但系统整体保证至少有一个线程能推进（无死锁）
+  </text>
+  <text x="65" y="885" font-family="Arial, sans-serif" font-size="10" style="fill:#cf1322">
+    • 注意：pop()中空指针检查③必须在解引用old_head-&gt;next之前！
+  </text>
+  <rect x="570" y="775" width="500" height="110" rx="8" style="fill:#f6ffed;stroke:#b7eb8f;stroke-width:1"/>
+  <text x="585" y="800" font-family="Arial, sans-serif" font-size="12" font-weight="bold" style="fill:#135200">
+    shared_ptr的作用：
+  </text>
+  <text x="585" y="825" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    • ① 数据通过shared_ptr管理，避免pop后数据被提前释放
+  </text>
+  <text x="585" y="845" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    • ② 堆分配T（make_shared），避免数据拷贝开销
+  </text>
+  <text x="585" y="865" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    • ④ 返回shared_ptr，调用者决定数据生命周期
+  </text>
+  <text x="585" y="885" font-family="Arial, sans-serif" font-size="10" style="fill:#135200">
+    • 即使node被delete，T仍可通过shared_ptr安全访问
+  </text>
+</svg>
